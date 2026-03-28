@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #4f46e5;
+  --color-primary-dark: #4338ca;
+  --color-background: #f9fafb;
+  --color-surface: #ffffff;
+  --color-text: #111827;
+  --color-text-secondary: #6b7280;
+}
+
+.dark {
+  --color-primary: #6366f1;
+  --color-primary-dark: #4f46e5;
+  --color-background: #111827;
+  --color-surface: #1f2937;
+  --color-text: #f9fafb;
+  --color-text-secondary: #9ca3af;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Note colors */
+.note-white { background-color: #ffffff; }
+.note-red { background-color: #f28b82; }
+.note-yellow { background-color: #fdd663; }
+.note-green { background-color: #81c995; }
+.note-cyan { background-color: #78d9ec; }
+.note-blue { background-color: #7baaf7; }
+.note-purple { background-color: #8793f9; }
+.note-pink { background-color: #ff8bcc; }
+.note-gray { background-color: #e8eaed; }
+
+.dark .note-white { background-color: #2d2d2d; }
+.dark .note-red { background-color: #c53929; }
+.dark .note-yellow { background-color: #b0941f; }
+.dark .note-green { background-color: #1e8e3e; }
+.dark .note-cyan { background-color: #1a9fbf; }
+.dark .note-blue { background-color: #1967d2; }
+.dark .note-purple { background-color: #5f63d9; }
+.dark .note-pink { background-color: #d930a8; }
+.dark .note-gray { background-color: #5f6368; }
