@@ -1,2 +1,111 @@
-web/node_modules/
-node_modules
+# Dependencies
+node_modules/
+.pnpm-store/
+.pnpm-debug.log
+
+# Build outputs
+build/
+dist/
+.dart_tool/
+.packages
+build-output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Android
+android/.gradle/
+android/local.properties
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/.idea/
+android/*.iml
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Runner.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
+
+# Flutter
+.flutter-plugins-dependencies
+.flutter-plugins
+.packages
+
+# Keystore
+*.jks
+*.keystore
+*.p12
+*.pem
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Cache
+.cache/
+.npm/
+.gradle/
+
+# Backup files
+*.bak
+*.backup
+
+# Generated files
+*.g.dart
+*.freezed.dart
+*.mocks.dart
+
+# Coverage
+coverage/
+lcov.info
+
+# Documentation builds
+docs/_build/
+
+# Package files
+*.tar.gz
+*.zip
+
+# Checksums
+*.sha256
+*.md5
+
+# Editor directories and files
+.idea
+*.iml
+*.ipr
+*.iws
+.vscode
+*.code-workspace
+
+# Miscellaneous
+.sass-cache/
+connect.lock
+typings/

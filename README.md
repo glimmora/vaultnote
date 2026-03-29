@@ -1,161 +1,350 @@
 # VaultNote
 
-**Encrypted notes with military-grade encryption**
-
-VaultNote is a secure, offline-first notes application with end-to-end encryption. Each note is stored as an encrypted `.vnc` (VaultNote Container) file using AES-256-GCM encryption with Argon2id key derivation.
+A secure note-taking application built with Flutter and Web technologies.
 
 ## Features
 
-### Security
-- **AES-256-GCM** encryption for all notes
-- **Argon2id** key derivation (m=65536, t=3, p=4)
-- **HMAC-SHA256** integrity verification
-- Master key stored only in RAM during session
-- Auto-lock after period of inactivity
-- Secure wipe on wrong password attempts
+- 🔐 Encrypted note storage with AES-256
+- 👆 Biometric authentication (fingerprint, face)
+- 📱 Cross-platform support (Android, iOS, Web)
+- ✍️ Markdown support with live preview
+- ☁️ Cloud sync with end-to-end encryption
+- 🔍 Full-text search across all notes
+- 📁 Folder organization with tags
+- 🌙 Dark and light theme support
 
-### Core Features
-- Create, edit, delete notes with rich text formatting
-- 9 color options for notes (like Google Keep)
-- Labels/Tags for organization
-- Pin important notes to top
-- Search notes (decrypt-and-search in-memory)
-- Dark/Light mode
-- Grid & List view toggle
+## Quick Start
 
-### Export/Import
-- **QR Code Export**: Export notes as encrypted QR codes
-- **QR Code Import**: Scan QR codes to import notes
-- **File Export**: Export notes as `.vnc` container files
-- **File Import**: Import `.vnc` files via file picker
+### Prerequisites
 
-## Project Structure
+- Flutter SDK (3.0 or higher)
+- Node.js (16 or higher)
+- Java JDK 17 (for Android development)
+- Android SDK (for Android development)
+- Xcode (for iOS development, macOS only)
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd vaultnote
+```
+
+2. Run automated setup:
+```bash
+./scripts/setup.sh
+```
+
+3. Run the application:
+```bash
+./scripts/run.sh
+```
+
+## Development
+
+### Project Structure
 
 ```
 vaultnote/
-├── flutter/          # Flutter mobile app (Android)
-│   ├── lib/
-│   │   ├── core/     # Crypto, storage, QR, export
-│   │   ├── domain/   # Entities and use cases
-│   │   └── presentation/ # UI screens and widgets
-│   └── android/      # Android native code
-└── web/              # React web app (Vite + TypeScript)
-    ├── src/
-    │   ├── core/     # Crypto, storage, QR
-    │   ├── domain/   # Types and entities
-    │   ├── presentation/ # React components
-    │   └── store/    # Zustand state management
-    └── public/
+├── flutter/          # Flutter mobile application
+│   ├── lib/         # Dart source code
+│   ├── android/     # Android-specific code
+│   ├── ios/         # iOS-specific code
+│   └── test/        # Unit and widget tests
+├── web/              # Web application
+│   ├── src/         # Source code
+│   ├── public/      # Static assets
+│   └── dist/        # Build output
+├── scripts/          # Automation scripts
+│   ├── setup.sh     # Install dependencies
+│   ├── run.sh       # Run application
+│   ├── test.sh      # Run tests
+│   ├── fix.sh       # Auto-fix issues
+│   ├── build.sh     # Build for production
+│   ├── build-android.sh  # Build Android APK
+│   ├── build-web.sh      # Build Web app
+│   └── auto-pipeline.sh  # Full CI/CD pipeline
+├── build-output/     # Build artifacts
+└── keystore/         # Signing keys
 ```
 
-## Technology Stack
+### Scripts
 
-### Flutter App
-- **Framework**: Flutter 3.x
-- **State Management**: flutter_bloc
-- **Crypto**: pointycastle, argon2, encrypt
-- **Storage**: flutter_secure_storage, path_provider
-- **QR**: qr_flutter, mobile_scanner
+All automation scripts are located in the `scripts/` directory:
 
-### Web App
-- **Framework**: React 18 + TypeScript
-- **Build Tool**: Vite 5
-- **Styling**: Tailwind CSS
-- **State Management**: Zustand
-- **Crypto**: Web Crypto API, argon2-browser
-- **QR**: qrcode, @zxing/library
+| Script | Description |
+|--------|-------------|
+| `setup.sh` | Install dependencies and configure environment |
+| `run.sh` | Run the application (Flutter or Web) |
+| `test.sh` | Run all tests with coverage |
+| `fix.sh` | Auto-detect and fix common issues |
+| `build.sh` | Build for production (Android + Web) |
+| `build-android.sh` | Build Android APK/AAB with signing |
+| `build-web.sh` | Build Web application |
+| `auto-pipeline.sh` | Full automated pipeline |
 
-## .vnc File Format
+### Usage Examples
 
-Each note is stored as a `.vnc` file with the following structure:
+#### Run Application
+```bash
+# Auto-detect and run
+./scripts/run.sh
 
-```
-[HEADER — 128 bytes]
-  Magic "VNC\x01" | Version | Flags | Reserved
+# Run Flutter app
+./scripts/run.sh flutter
 
-[KDF PARAMS — 16 bytes]
-  Argon2id m_cost | t_cost | p_cost | Reserved
+# Run Web app on custom port
+./scripts/run.sh web -p 8080
 
-[SALT — 32 bytes]
-  Cryptographically random per file
-
-[IV/NONCE — 12 bytes]
-  Cryptographically random per file
-
-[CIPHERTEXT — variable]
-  AES-256-GCM encrypted payload (gzip compressed JSON)
-
-[GCM AUTH TAG — 16 bytes]
-  Authentication tag from AES-GCM
-
-[HMAC-SHA256 — 32 bytes]
-  HMAC over entire file for tamper detection
+# Run in background
+./scripts/run.sh -b
 ```
 
-## Getting Started
+#### Build Application
+```bash
+# Build all (Android + Web)
+./scripts/build.sh
 
-### Flutter App
+# Build Android only
+./scripts/build.sh -f
+
+# Build Web only
+./scripts/build.sh -w
+
+# Build signed split APKs
+./scripts/build.sh -f -s -p
+
+# Build App Bundle
+./scripts/build-android.sh -t appbundle
+```
+
+#### Run Tests
+```bash
+# Run all tests
+./scripts/test.sh
+
+# Run Flutter tests only
+./scripts/test.sh -f
+
+# Run Web tests only
+./scripts/test.sh -w
+
+# Generate coverage report
+./scripts/test.sh -c
+```
+
+#### Auto Fix
+```bash
+# Auto-fix all issues
+./scripts/fix.sh
+
+# Show fixes without applying
+./scripts/fix.sh -a
+
+# Verbose output
+./scripts/fix.sh -v
+```
+
+#### Full Pipeline
+```bash
+# Run complete pipeline
+./scripts/auto-pipeline.sh
+
+# Skip run step
+./scripts/auto-pipeline.sh -s
+
+# Skip test step
+./scripts/auto-pipeline.sh -S
+
+# Verbose with 5 retries
+./scripts/auto-pipeline.sh -v -r 5
+```
+
+## Android Development
+
+### Building APK
 
 ```bash
-cd vaultnote/flutter
+# Build signed split APKs per ABI
+./scripts/build-android.sh
 
-# Install dependencies
-flutter pub get
+# Build single universal APK
+./scripts/build-android.sh -p=false
 
-# Run the app
-flutter run
+# Build unsigned APK
+./scripts/build-android.sh -s=false
 
-# Build release APK
-flutter build apk --release --obfuscate --split-debug-info=debug-info/
+# Build App Bundle for Play Store
+./scripts/build-android.sh -t appbundle
 ```
 
-### Web App
+### Signing
+
+APKs are automatically signed with the keystore in `keystore/` directory:
+- Keystore: `vaultnote-release.keystore`
+- Alias: `vaultnote`
+- Password: Stored in script (change for production)
+
+## Web Development
+
+### Building
 
 ```bash
-cd vaultnote/web
-
-# Install dependencies
-npm install
-
-# Development server
-npm run dev
-
 # Build for production
-npm run build
+./scripts/build-web.sh
 
-# Preview production build
-npm run preview
+# Build for development
+./scripts/build-web.sh -m development
+
+# Build with source maps
+./scripts/build-web.sh -s
+
+# Clean build
+./scripts/build-web.sh -c
 ```
 
-## Security Considerations
+### Deployment
 
-1. **Never store passwords**: Only salt and verification hash are stored
-2. **Key management**: Master key exists only in RAM during active session
-3. **Constant-time comparison**: All cryptographic comparisons use constant-time algorithms
-4. **Secure deletion**: Keys are zeroed from memory on lock
-5. **No plaintext on disk**: Notes are encrypted before writing to storage
-6. **Tamper detection**: HMAC verification detects file modification
+The build output is in `build-output/` directory:
+- Extract the `.tar.gz` archive
+- Serve the `dist/` folder with any web server
+- Or deploy to Vercel, Netlify, or Firebase Hosting
 
-## Privacy
+## Testing
 
-- **Offline-first**: All data stored locally on device
-- **No analytics**: No tracking or telemetry
-- **No cloud sync**: Your notes never leave your device unless you export them
-- **Open source**: All code is auditable
+### Test Coverage
 
-## License
+```bash
+# Generate coverage report
+./scripts/test.sh -c
 
-MIT License - See LICENSE file for details
+# View HTML coverage report
+open coverage/html/index.html
+```
+
+### Test Reports
+
+Test reports are generated in `logs/` directory:
+- `test-report-*.md` - Markdown summary
+- `test-*.log` - Detailed logs
+
+## CI/CD Pipeline
+
+The `auto-pipeline.sh` script provides a complete CI/CD workflow:
+
+1. **Setup** - Verify dependencies
+2. **Run** - Start application (optional)
+3. **Test** - Run all tests
+4. **Fix** - Auto-fix issues if tests fail
+5. **Re-Test** - Verify fixes
+6. **Report** - Generate pipeline report
+
+### Pipeline Options
+
+```bash
+# Full pipeline
+./scripts/auto-pipeline.sh
+
+# Flutter only
+./scripts/auto-pipeline.sh -t flutter
+
+# Skip run, test + fix only
+./scripts/auto-pipeline.sh -s
+
+# Verbose with 5 retries
+./scripts/auto-pipeline.sh -v -r 5
+```
+
+## Configuration
+
+### Environment Variables
+
+Create `.env` file in project root:
+
+```env
+# Firebase (optional)
+FIREBASE_API_KEY=your_api_key
+FIREBASE_PROJECT_ID=your_project_id
+
+# Cloud Sync (optional)
+SYNC_SERVER_URL=https://api.vaultnote.com
+SYNC_ENCRYPTION_KEY=your_encryption_key
+
+# Development
+DEBUG_MODE=true
+LOG_LEVEL=verbose
+```
+
+### Build Configuration
+
+Edit `scripts/build.sh` to customize:
+- Build modes (debug, profile, release)
+- Signing configuration
+- Output directory
+- Verbose logging
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Flutter not found**
+   ```bash
+   ./scripts/setup.sh  # Re-run setup
+   ```
+
+2. **Android build fails**
+   ```bash
+   ./scripts/fix.sh    # Auto-fix issues
+   ./scripts/build-android.sh -c  # Clean build
+   ```
+
+3. **Tests fail**
+   ```bash
+   ./scripts/fix.sh    # Auto-fix issues
+   ./scripts/test.sh   # Re-run tests
+   ```
+
+4. **Dependencies outdated**
+   ```bash
+   cd flutter && flutter pub upgrade
+   cd ../web && npm update
+   ```
+
+### Logs
+
+All logs are stored in `logs/` directory:
+- `setup-*.log` - Setup logs
+- `run-*.log` - Run logs
+- `test-*.log` - Test logs
+- `fix-*.log` - Fix logs
+- `build-*.log` - Build logs
+- `pipeline-*.log` - Pipeline logs
+
+## Security
+
+- All notes are encrypted with AES-256
+- Biometric authentication required
+- Cloud sync uses end-to-end encryption
+- No plaintext data stored locally
+- Secure key derivation with PBKDF2
 
 ## Contributing
 
-Contributions are welcome! Please read our contributing guidelines before submitting PRs.
+1. Fork the repository
+2. Create feature branch: `git checkout -b feature/amazing-feature`
+3. Run tests: `./scripts/test.sh`
+4. Commit changes: `git commit -m 'Add amazing feature'`
+5. Push to branch: `git push origin feature/amazing-feature`
+6. Open pull request
+
+## License
+
+Private - All rights reserved
 
 ## Support
 
-For issues and feature requests, please use the GitHub issue tracker.
-
----
-
-**VaultNote** - *Your notes, securely encrypted*
-# vaultnote
+For issues and questions:
+- Check `logs/` directory for error details
+- Run `./scripts/fix.sh` for auto-repair
+- Review `SCRIPTS_SUMMARY.md` for script documentation

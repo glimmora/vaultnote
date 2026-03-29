@@ -14,7 +14,8 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 
 # Configuration
-PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPTS_DIR")"
 FLUTTER_DIR="$PROJECT_DIR/flutter"
 WEB_DIR="$PROJECT_DIR/web"
 BUILD_OUTPUT_DIR="$PROJECT_DIR/build-output"
@@ -27,7 +28,15 @@ FLUTTER_BUILD_MODE="release"
 WEB_BUILD_MODE="production"
 CLEAN_BUILD=false
 SIGN_BUILD=false
+SPLIT_APK=false
 VERBOSE=false
+
+# Keystore configuration
+KEYSTORE_DIR="$PROJECT_DIR/keystore"
+KEYSTORE_FILE="$KEYSTORE_DIR/vaultnote-release.keystore"
+KEYSTORE_PASSWORD="LO3QERKYFWAVIRZQS7JNHNHKMGCIZTRB"
+KEY_ALIAS="vaultnote"
+KEY_PASSWORD="LO3QERKYFWAVIRZQS7JNHNHKMGCIZTRB"
 
 print_header() {
     echo -e "${BLUE}========================================${NC}"
@@ -64,6 +73,7 @@ Options:
     -m, --mode MODE           Build mode: release, debug, profile (default: release)
     -c, --clean               Clean build before building
     -s, --sign                Sign Flutter APK/AAB
+    -p, --split               Split APK per ABI (armeabi-v7a, arm64-v8a, x86_64)
     -v, --verbose             Verbose output
     -o, --output DIR          Output directory (default: build-output)
     -h, --help                Show this help message
@@ -73,6 +83,7 @@ Examples:
     $(basename "$0") -f                       # Build Flutter APK only
     $(basename "$0") -w                       # Build Web only
     $(basename "$0") -t appbundle -s          # Build signed App Bundle
+    $(basename "$0") -f -s -p                 # Build signed split APKs per ABI
     $(basename "$0") -c -v                    # Clean build with verbose output
 
 EOF
@@ -104,6 +115,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -s|--sign)
             SIGN_BUILD=true
+            shift
+            ;;
+        -p|--split)
+            SPLIT_APK=true
             shift
             ;;
         -v|--verbose)
@@ -200,39 +215,119 @@ if [[ "$BUILD_FLUTTER" == true ]]; then
         BUILD_ARGS="$BUILD_ARGS --verbose"
     fi
     
-    # Build
-    print_step "Building Flutter $FLUTTER_BUILD_TYPE..."
-    
-    if [[ "$FLUTTER_BUILD_TYPE" == "appbundle" ]]; then
-        flutter build appbundle $BUILD_ARGS
-        BUILD_FILE="build/app/outputs/bundle/release/app-release.aab"
+    # Handle split APKs
+    if [[ "$SPLIT_APK" == true && "$FLUTTER_BUILD_TYPE" == "apk" ]]; then
+        print_step "Building split APKs per ABI..."
+        
+        # Build for each ABI
+        ABIS=("arm" "arm64" "x64")
+        ABI_NAMES=("armeabi-v7a" "arm64-v8a" "x86_64")
+        
+        for i in "${!ABIS[@]}"; do
+            ABI="${ABIS[$i]}"
+            ABI_NAME="${ABI_NAMES[$i]}"
+            print_step "Building APK for $ABI_NAME..."
+            flutter build apk $BUILD_ARGS --target-platform "android-$ABI"
+            
+            BUILD_FILE="build/app/outputs/flutter-apk/app-$ABI-release.apk"
+            
+            if [[ -f "$BUILD_FILE" ]]; then
+                TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+                VERSION=$(grep -oP 'version: \K[^\s]+' pubspec.yaml | head -1 | cut -d'+' -f1)
+                OUTPUT_FILE="$BUILD_OUTPUT_DIR/VaultNote-v${VERSION}-${TIMESTAMP}-${ABI}.apk"
+                
+                cp "$BUILD_FILE" "$OUTPUT_FILE"
+                
+                # Sign APK if requested
+                if [[ "$SIGN_BUILD" == true ]]; then
+                    print_step "Signing APK for $ABI..."
+                    if [[ -f "$KEYSTORE_FILE" ]]; then
+                        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+                            -keystore "$KEYSTORE_FILE" \
+                            -storepass "$KEYSTORE_PASSWORD" \
+                            -keypass "$KEY_PASSWORD" \
+                            "$OUTPUT_FILE" "$KEY_ALIAS"
+                        print_success "APK signed for $ABI"
+                    else
+                        print_error "Keystore not found at $KEYSTORE_FILE"
+                        exit 1
+                    fi
+                fi
+                
+                # Generate checksum
+                sha256sum "$OUTPUT_FILE" > "$OUTPUT_FILE.sha256"
+                
+                print_success "APK built for $ABI"
+                print_info "Output: $OUTPUT_FILE"
+                print_info "Size: $(du -h "$OUTPUT_FILE" | cut -f1)"
+            else
+                print_error "APK build failed for $ABI - output file not found"
+                exit 1
+            fi
+        done
+        
+        print_success "All split APKs built successfully"
     else
-        flutter build apk $BUILD_ARGS
-        BUILD_FILE="build/app/outputs/flutter-apk/app-release.apk"
-    fi
-    
-    if [[ -f "$BUILD_FILE" ]]; then
-        # Copy to output directory
-        TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-        VERSION=$(grep -oP 'version: \K[^\s]+' pubspec.yaml | head -1 | cut -d'+' -f1)
+        # Standard build (single APK or AAB)
+        print_step "Building Flutter $FLUTTER_BUILD_TYPE..."
         
         if [[ "$FLUTTER_BUILD_TYPE" == "appbundle" ]]; then
-            OUTPUT_FILE="$BUILD_OUTPUT_DIR/VaultNote-v${VERSION}-${TIMESTAMP}.aab"
+            flutter build appbundle $BUILD_ARGS
+            BUILD_FILE="build/app/outputs/bundle/release/app-release.aab"
         else
-            OUTPUT_FILE="$BUILD_OUTPUT_DIR/VaultNote-v${VERSION}-${TIMESTAMP}.apk"
+            flutter build apk $BUILD_ARGS
+            BUILD_FILE="build/app/outputs/flutter-apk/app-release.apk"
         fi
         
-        cp "$BUILD_FILE" "$OUTPUT_FILE"
-        
-        # Generate checksum
-        sha256sum "$OUTPUT_FILE" > "$OUTPUT_FILE.sha256"
-        
-        print_success "Flutter build completed"
-        print_info "Output: $OUTPUT_FILE"
-        print_info "Size: $(du -h "$OUTPUT_FILE" | cut -f1)"
-    else
-        print_error "Flutter build failed - output file not found"
-        exit 1
+        if [[ -f "$BUILD_FILE" ]]; then
+            # Copy to output directory
+            TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+            VERSION=$(grep -oP 'version: \K[^\s]+' pubspec.yaml | head -1 | cut -d'+' -f1)
+            
+            if [[ "$FLUTTER_BUILD_TYPE" == "appbundle" ]]; then
+                OUTPUT_FILE="$BUILD_OUTPUT_DIR/VaultNote-v${VERSION}-${TIMESTAMP}.aab"
+            else
+                OUTPUT_FILE="$BUILD_OUTPUT_DIR/VaultNote-v${VERSION}-${TIMESTAMP}.apk"
+            fi
+            
+            cp "$BUILD_FILE" "$OUTPUT_FILE"
+            
+            # Sign if requested
+            if [[ "$SIGN_BUILD" == true ]]; then
+                print_step "Signing $FLUTTER_BUILD_TYPE..."
+                if [[ -f "$KEYSTORE_FILE" ]]; then
+                    if [[ "$FLUTTER_BUILD_TYPE" == "appbundle" ]]; then
+                        # For AAB, we need to use jarsigner
+                        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+                            -keystore "$KEYSTORE_FILE" \
+                            -storepass "$KEYSTORE_PASSWORD" \
+                            -keypass "$KEY_PASSWORD" \
+                            "$OUTPUT_FILE" "$KEY_ALIAS"
+                    else
+                        # For APK, we can use apksigner or jarsigner
+                        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+                            -keystore "$KEYSTORE_FILE" \
+                            -storepass "$KEYSTORE_PASSWORD" \
+                            -keypass "$KEY_PASSWORD" \
+                            "$OUTPUT_FILE" "$KEY_ALIAS"
+                    fi
+                    print_success "$FLUTTER_BUILD_TYPE signed successfully"
+                else
+                    print_error "Keystore not found at $KEYSTORE_FILE"
+                    exit 1
+                fi
+            fi
+            
+            # Generate checksum
+            sha256sum "$OUTPUT_FILE" > "$OUTPUT_FILE.sha256"
+            
+            print_success "Flutter build completed"
+            print_info "Output: $OUTPUT_FILE"
+            print_info "Size: $(du -h "$OUTPUT_FILE" | cut -f1)"
+        else
+            print_error "Flutter build failed - output file not found"
+            exit 1
+        fi
     fi
     echo ""
 fi
@@ -307,9 +402,22 @@ if [[ "$BUILD_FLUTTER" == true ]]; then
     echo -e "${CYAN}Flutter Build:${NC}"
     echo -e "  Type: $FLUTTER_BUILD_TYPE"
     echo -e "  Mode: $FLUTTER_BUILD_MODE"
-    if [[ -f "$OUTPUT_FILE" ]]; then
-        echo -e "  Output: $(basename "$OUTPUT_FILE")"
-        echo -e "  Size: $(du -h "$OUTPUT_FILE" | cut -f1)"
+    echo -e "  Signed: $SIGN_BUILD"
+    echo -e "  Split APK: $SPLIT_APK"
+    
+    if [[ "$SPLIT_APK" == true && "$FLUTTER_BUILD_TYPE" == "apk" ]]; then
+        echo -e "  ABIs: armeabi-v7a, arm64-v8a, x86_64"
+        echo -e "  Output files:"
+        for ABI_NAME in "${ABI_NAMES[@]}"; do
+            if [[ -f "$BUILD_OUTPUT_DIR"/VaultNote-v*-*-"$ABI_NAME".apk ]]; then
+                echo -e "    - $(basename "$BUILD_OUTPUT_DIR"/VaultNote-v*-*-"$ABI_NAME".apk)"
+            fi
+        done
+    else
+        if [[ -f "$OUTPUT_FILE" ]]; then
+            echo -e "  Output: $(basename "$OUTPUT_FILE")"
+            echo -e "  Size: $(du -h "$OUTPUT_FILE" | cut -f1)"
+        fi
     fi
     echo ""
 fi

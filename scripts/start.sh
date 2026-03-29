@@ -14,7 +14,8 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 
 # Configuration
-PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPTS_DIR")"
 FLUTTER_DIR="$PROJECT_DIR/flutter"
 WEB_DIR="$PROJECT_DIR/web"
 
