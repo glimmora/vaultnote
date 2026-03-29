@@ -265,7 +265,7 @@ class _QRImportScreenState extends State<QRImportScreen> {
     }
   }
 
-  void _showImportSuccess(dynamic note) {
+  void _showImportSuccess(Object? note) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

@@ -2,7 +2,6 @@ import 'dart:typed_data';
 import 'dart:convert';
 import 'argon2_kdf.dart';
 import 'hmac_sha256.dart';
-import 'secure_random.dart';
 
 /// Manages in-memory encryption keys
 /// Keys are NEVER written to disk and are cleared on lock/dispose
@@ -91,8 +90,8 @@ class KeyManager {
 
   bool _constantTimeCompare(Uint8List a, Uint8List b) {
     if (a.length != b.length) return false;
-    var result = 0;
-    for (var i = 0; i < a.length; i++) {
+    final result = 0;
+    for (final i = 0; i < a.length; i++) {
       result |= a[i] ^ b[i];
     }
     return result == 0;

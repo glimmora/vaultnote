@@ -69,7 +69,7 @@ class QREncoder {
 
     // Generate QR strings
     final qrStrings = <String>[];
-    for (var i = 0; i < chunks.length; i++) {
+    for (final i = 0; i < chunks.length; i++) {
       final header = 'VNQ:$qrVersion:${i + 1}/$total';
       final encoded = base64Url.encode(chunks[i]);
       qrStrings.add('$header:$encoded');
@@ -80,7 +80,7 @@ class QREncoder {
 
   List<Uint8List> _splitIntoChunks(Uint8List data, int chunkSize) {
     final chunks = <Uint8List>[];
-    for (var i = 0; i < data.length; i += chunkSize) {
+    for (final i = 0; i < data.length; i += chunkSize) {
       final end = (i + chunkSize < data.length) ? i + chunkSize : data.length;
       chunks.add(data.sublist(i, end));
     }

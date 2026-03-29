@@ -44,8 +44,8 @@ class Argon2KDF {
   /// Constant-time comparison to prevent timing attacks
   bool _constantTimeCompare(Uint8List a, Uint8List b) {
     if (a.length != b.length) return false;
-    var result = 0;
-    for (var i = 0; i < a.length; i++) {
+    final result = 0;
+    for (final i = 0; i < a.length; i++) {
       result |= a[i] ^ b[i];
     }
     return result == 0;

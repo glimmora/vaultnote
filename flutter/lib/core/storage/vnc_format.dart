@@ -138,7 +138,7 @@ class VNCFormat {
   ) {
     final totalSize = headerSize + kdfParamsSize + saltSize + ivSize + ciphertext.length + authTagSize;
     final result = Uint8List(totalSize);
-    var offset = 0;
+    final offset = 0;
 
     // Header (128 bytes)
     // Magic
@@ -158,19 +158,19 @@ class VNCFormat {
 
     // KDF Params (16 bytes)
     // m_cost (uint32 LE)
-    var mCost = Argon2KDF.memoryCost;
+    final mCost = Argon2KDF.memoryCost;
     result[offset++] = mCost & 0xFF;
     result[offset++] = (mCost >> 8) & 0xFF;
     result[offset++] = (mCost >> 16) & 0xFF;
     result[offset++] = (mCost >> 24) & 0xFF;
     // t_cost (uint32 LE)
-    var tCost = Argon2KDF.timeCost;
+    final tCost = Argon2KDF.timeCost;
     result[offset++] = tCost & 0xFF;
     result[offset++] = (tCost >> 8) & 0xFF;
     result[offset++] = (tCost >> 16) & 0xFF;
     result[offset++] = (tCost >> 24) & 0xFF;
     // p_cost (uint32 LE)
-    var pCost = Argon2KDF.parallelism;
+    final pCost = Argon2KDF.parallelism;
     result[offset++] = pCost & 0xFF;
     result[offset++] = (pCost >> 8) & 0xFF;
     result[offset++] = (pCost >> 16) & 0xFF;
@@ -198,7 +198,7 @@ class VNCFormat {
 
   /// Parse KDF params from file
   static (int mCost, int tCost, int pCost) parseKDFParams(Uint8List data) {
-    var offset = headerSize;
+    final offset = headerSize;
     
     // m_cost
     int mCost = data[offset] |

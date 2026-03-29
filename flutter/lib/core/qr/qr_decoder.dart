@@ -51,7 +51,7 @@ class QRImportSession extends Equatable {
 
     // Combine all chunks
     final combined = Uint8List.fromList([
-      for (var i = 0; i < total; i++) ...chunks[i]!,
+      for (final i = 0; i < total; i++) ...chunks[i]!,
     ]);
 
     // Extract components
