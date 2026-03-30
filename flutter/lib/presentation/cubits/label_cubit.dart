@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../core/storage/label_repository.dart';
+import '../../core/storage/note_repository.dart';
 import '../../domain/entities/label.dart';
 import '../../domain/usecases/note_usecases.dart';
 
@@ -61,10 +62,11 @@ class LabelState extends Equatable {
 // Cubit
 class LabelCubit extends Cubit<LabelState> {
   final LabelRepository _labelRepository;
+  final NoteRepository _noteRepository;
   final CreateLabelUseCase _createLabel = CreateLabelUseCase();
   final UpdateLabelUseCase _updateLabel = UpdateLabelUseCase();
 
-  LabelCubit(this._labelRepository) : super(const LabelState());
+  LabelCubit(this._labelRepository, this._noteRepository) : super(const LabelState());
 
   Future<void> loadLabels() async {
     emit(state.copyWith(isLoading: true, error: null));
@@ -97,7 +99,15 @@ class LabelCubit extends Cubit<LabelState> {
 
   Future<void> deleteLabel(String labelId) async {
     try {
+      // Get the label name before deleting
+      final labelToDelete = state.labels.firstWhere((l) => l.id == labelId);
+      
+      // Delete from labels list
       await _labelRepository.deleteLabel(labelId);
+      
+      // Remove label from all notes
+      await _noteRepository.removeLabelFromNotes(labelToDelete.name);
+      
       await loadLabels();
     } catch (e) {
       emit(state.copyWith(error: e.toString()));

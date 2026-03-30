@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useCryptoStore } from './store/cryptoStore'
 import UnlockScreen from './presentation/screens/UnlockScreen'
@@ -11,6 +12,28 @@ import SettingsScreen from './presentation/screens/SettingsScreen'
 function App() {
   const isUnlocked = useCryptoStore((state) => state.isUnlocked)
   const isInitialized = useCryptoStore((state) => state.isInitialized)
+  const resetAutoLockTimer = useCryptoStore((state) => state.resetAutoLockTimer)
+
+  // Reset auto-lock timer on user activity
+  useEffect(() => {
+    if (!isUnlocked) return
+
+    const handleActivity = () => {
+      resetAutoLockTimer()
+    }
+
+    // Listen for user activity events
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart']
+    events.forEach(event => {
+      window.addEventListener(event, handleActivity)
+    })
+
+    return () => {
+      events.forEach(event => {
+        window.removeEventListener(event, handleActivity)
+      })
+    }
+  }, [isUnlocked, resetAutoLockTimer])
 
   if (!isInitialized) {
     return (

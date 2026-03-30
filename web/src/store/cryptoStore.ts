@@ -14,6 +14,7 @@ interface CryptoState {
   error: string | null
   masterKey: Uint8Array | null
   hmacKey: Uint8Array | null
+  autoLockTimeout: number // in minutes (0 = never)
 
   // QR export
   qrChunks: string[]
@@ -27,7 +28,10 @@ interface CryptoState {
   initialize: () => Promise<void>
   setupNewPassword: (password: string) => Promise<boolean>
   unlockWithPassword: (password: string) => Promise<boolean>
+  changePassword: (oldPassword: string, newPassword: string) => Promise<boolean>
   lock: () => void
+  setAutoLockTimeout: (timeout: number) => void
+  resetAutoLockTimer: () => void
   exportToQR: (note: any, password: string) => Promise<void>
   processScannedQR: (qrData: string) => void
   executeQRImport: (password: string) => Promise<boolean>
@@ -47,6 +51,9 @@ async function deriveHmacKey(masterKey: Uint8Array): Promise<Uint8Array> {
   return HMACSHA256.compute(hmacKeySeed, masterKey)
 }
 
+// Auto-lock timer reference (module-level, not serialized)
+let autoLockTimerId: NodeJS.Timeout | null = null
+
 export const useCryptoStore = create<CryptoState>((set, get) => ({
   isInitialized: false,
   isUnlocked: false,
@@ -54,6 +61,7 @@ export const useCryptoStore = create<CryptoState>((set, get) => ({
   error: null,
   masterKey: null,
   hmacKey: null,
+  autoLockTimeout: 5, // Default 5 minutes
   qrChunks: [],
   qrIndex: 0,
   qrSession: null,
@@ -96,6 +104,12 @@ export const useCryptoStore = create<CryptoState>((set, get) => ({
         hmacKey: hmacKey,
       })
 
+      // Start auto-lock timer
+      const timeout = get().autoLockTimeout
+      if (timeout > 0) {
+        get().resetAutoLockTimer()
+      }
+
       return true
     } catch (error) {
       set({ error: (error as Error).message })
@@ -134,6 +148,12 @@ export const useCryptoStore = create<CryptoState>((set, get) => ({
         hmacKey: hmacKey,
       })
 
+      // Start auto-lock timer
+      const timeout = get().autoLockTimeout
+      if (timeout > 0) {
+        get().resetAutoLockTimer()
+      }
+
       return true
     } catch (error) {
       set({ error: (error as Error).message })
@@ -142,6 +162,12 @@ export const useCryptoStore = create<CryptoState>((set, get) => ({
   },
 
   lock: () => {
+    // Clear auto-lock timer
+    if (autoLockTimerId) {
+      clearTimeout(autoLockTimerId)
+      autoLockTimerId = null
+    }
+
     set({
       isUnlocked: false,
       masterKey: null,
@@ -151,6 +177,76 @@ export const useCryptoStore = create<CryptoState>((set, get) => ({
       qrSession: null,
       importedNote: null,
     })
+  },
+
+  changePassword: async (oldPassword: string, newPassword: string) => {
+    try {
+      const salt = SecureStorage.getSalt()
+      if (!salt) {
+        set({ error: 'No password set up' })
+        return false
+      }
+
+      // Verify old password
+      const verifyHash = SecureStorage.getVerifyHash()
+      const oldKey = await Argon2KDF.deriveKey(oldPassword, salt)
+
+      if (verifyHash) {
+        const testVector = await HMACSHA256.compute(
+          new TextEncoder().encode('VNC_VERIFY'),
+          oldKey
+        )
+        if (!Argon2KDF.constantTimeCompare(testVector, verifyHash)) {
+          set({ error: 'Incorrect current password' })
+          return false
+        }
+      }
+
+      // Derive new key
+      const newKey = await Argon2KDF.deriveKey(newPassword, salt)
+      const newHmacKey = await deriveHmacKey(newKey)
+      const newTestVector = await HMACSHA256.compute(
+        new TextEncoder().encode('VNC_VERIFY'),
+        newKey
+      )
+
+      // Store new verification hash
+      SecureStorage.setVerifyHash(newTestVector)
+
+      // Update keys in memory
+      set({
+        masterKey: newKey,
+        hmacKey: newHmacKey,
+        error: null,
+      })
+
+      return true
+    } catch (error) {
+      set({ error: (error as Error).message })
+      return false
+    }
+  },
+
+  setAutoLockTimeout: (timeout: number) => {
+    set({ autoLockTimeout: timeout })
+    // Reset timer with new timeout
+    if (get().isUnlocked && timeout > 0) {
+      get().resetAutoLockTimer()
+    }
+  },
+
+  resetAutoLockTimer: () => {
+    // Clear existing timer
+    if (autoLockTimerId) {
+      clearTimeout(autoLockTimerId)
+    }
+
+    const timeout = get().autoLockTimeout
+    if (timeout > 0 && get().isUnlocked) {
+      autoLockTimerId = setTimeout(() => {
+        get().lock()
+      }, timeout * 60 * 1000) // Convert minutes to milliseconds
+    }
   },
 
   exportToQR: async (note: any, password: string) => {

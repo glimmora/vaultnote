@@ -42,6 +42,7 @@ class VaultNoteApp extends StatelessWidget {
         BlocProvider<LabelCubit>(
           create: (context) => LabelCubit(
             context.read<LabelRepository>(),
+            context.read<NoteRepository>(),
           ),
         ),
       ],

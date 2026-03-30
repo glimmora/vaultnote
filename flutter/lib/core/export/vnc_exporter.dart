@@ -4,7 +4,7 @@ import 'package:archive/archive.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import '../crypto/key_manager.dart';
-import 'vnc_format.dart';
+import '../storage/vnc_format.dart';
 import '../../domain/entities/note.dart';
 
 /// Export notes to .vnc container files

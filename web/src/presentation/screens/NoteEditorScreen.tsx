@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useNoteStore } from '../../store/noteStore'
 import { useLabelStore } from '../../store/labelStore'
@@ -10,11 +10,13 @@ const NOTE_COLORS = [
   '#78D9EC', '#7BAAF7', '#8793F9', '#FF8BCC', '#E8EAED'
 ]
 
+const AUTO_SAVE_INTERVAL = 2000 // 2 seconds
+
 export default function NoteEditorScreen() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
-  
-  const { createNote, updateNote } = useNoteStore()
+
+  const { notes, createNote, updateNote } = useNoteStore()
   const { labels } = useLabelStore()
 
   const [title, setTitle] = useState('')
@@ -25,36 +27,93 @@ export default function NoteEditorScreen() {
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [showLabelPicker, setShowLabelPicker] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [lastSaved, setLastSaved] = useState<Date | null>(null)
 
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current)
+      }
+    }
+  }, [])
+
+  // Load existing note
   useEffect(() => {
     if (id) {
-      // Load existing note - in real app, fetch from store
-      // For now, this is a simplified version
+      const existingNote = notes.find(n => n.id === id)
+      if (existingNote) {
+        setTitle(existingNote.title)
+        setBody(existingNote.body)
+        setSelectedColor(existingNote.color)
+        setSelectedLabels(existingNote.labels)
+        setIsPinned(existingNote.pinned)
+        setHasChanges(false)
+      }
     }
-  }, [id])
+  }, [id, notes])
 
-  const handleSave = async () => {
+  // Auto-save effect
+  useEffect(() => {
+    if (hasChanges && autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current)
+    }
+
+    if (hasChanges) {
+      autoSaveTimerRef.current = setTimeout(() => {
+        handleSave()
+      }, AUTO_SAVE_INTERVAL)
+    }
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current)
+      }
+    }
+  }, [hasChanges, title, body, selectedColor, selectedLabels, isPinned])
+
+  const handleSave = useCallback(async () => {
     if (!title.trim() && !body.trim()) return
+    if (!hasChanges) return
 
+    setIsSaving(true)
+
+    const now = new Date().toISOString()
     const note: Note = {
       id: id || uuidv4(),
       title: title.trim() || 'Untitled',
       body: body.trim(),
       labels: selectedLabels,
       color: selectedColor,
-      created: new Date().toISOString(),
-      modified: new Date().toISOString(),
+      created: id ? notes.find(n => n.id === id)?.created || now : now,
+      modified: now,
       pinned: isPinned,
-      archived: false,
+      archived: id ? notes.find(n => n.id === id)?.archived || false : false,
     }
 
-    if (id) {
-      await updateNote(note)
-    } else {
-      await createNote(note)
+    try {
+      if (id) {
+        await updateNote(note)
+      } else {
+        await createNote(note)
+      }
+      setHasChanges(false)
+      setLastSaved(new Date())
+    } catch (error) {
+      console.error('Save error:', error)
+    } finally {
+      setIsSaving(false)
     }
+  }, [title, body, selectedColor, selectedLabels, isPinned, id, notes, hasChanges, updateNote, createNote])
 
-    navigate('/')
+  const handleBack = async () => {
+    if (hasChanges) {
+      await handleSave()
+    }
+    navigate(-1)
   }
 
   const toggleLabel = (labelName: string) => {
@@ -73,13 +132,29 @@ export default function NoteEditorScreen() {
         <div className="max-w-4xl mx-auto px-4">
           <div className="flex items-center justify-between h-14">
             <button
-              onClick={() => navigate(-1)}
+              onClick={handleBack}
               className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
+            <div className="flex items-center space-x-2">
+              {isSaving && (
+                <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center">
+                  <svg className="animate-spin h-3 w-3 mr-1" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Saving...
+                </span>
+              )}
+              {!isSaving && lastSaved && (
+                <span className="text-xs text-gray-400 dark:text-gray-500">
+                  Saved {lastSaved.toLocaleTimeString()}
+                </span>
+              )}
+            </div>
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
               {id ? 'Edit Note' : 'New Note'}
             </h1>

@@ -168,9 +168,27 @@ class NoteRepository {
       _keyManager.masterKey!,
       _keyManager.hmacKey!,
     );
-    
+
     // Save the imported note
     await createNote(note);
     return note;
+  }
+
+  /// Remove a label from all notes
+  Future<void> removeLabelFromNotes(String labelName) async {
+    if (!_keyManager.isUnlocked) {
+      throw StateError('KeyManager not unlocked');
+    }
+
+    final allNotes = await getAllNotes();
+    for (final note in allNotes) {
+      if (note.labels.contains(labelName)) {
+        final updatedNote = note.copyWith(
+          labels: note.labels.where((l) => l != labelName).toList(),
+          modified: DateTime.now(),
+        );
+        await updateNote(updatedNote);
+      }
+    }
   }
 }
