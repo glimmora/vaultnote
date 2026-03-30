@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:qr_code_scanner_plus/qr_code_scanner_plus.dart';
+import '../../domain/entities/note.dart';
 import '../cubits/crypto_cubit.dart';
 import '../cubits/note_cubit.dart';
 
@@ -274,7 +275,7 @@ class _QRImportScreenState extends State<QRImportScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Note "${note.title}" has been imported successfully!'),
+            Text('Note "${(note as Note).title}" has been imported successfully!'),
             const SizedBox(height: 16),
             Text(
               'You can now find it in your notes list.',

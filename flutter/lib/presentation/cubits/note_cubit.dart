@@ -201,7 +201,7 @@ class NoteCubit extends Cubit<NoteState> {
   }
 
   List<Note> _applyFilters(List<Note> notes) {
-    final result = notes;
+    var result = notes;
     if (state.filterLabel != null) {
       result = _applyLabelFilter(result);
     }

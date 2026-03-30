@@ -7,6 +7,7 @@ import 'core/storage/note_repository.dart';
 import 'core/storage/label_repository.dart';
 import 'core/export/vnc_exporter.dart';
 import 'core/export/vnc_importer.dart';
+import 'domain/entities/note.dart';
 import 'presentation/cubits/note_cubit.dart';
 import 'presentation/cubits/label_cubit.dart';
 import 'presentation/cubits/crypto_cubit.dart';
@@ -66,7 +67,7 @@ class VaultNoteApp extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
           ),
-          floatingActionButtonTheme: const FloatingActionButtonTheme(
+          floatingActionButtonTheme: FloatingActionButtonThemeData(
             elevation: 2,
           ),
         ),

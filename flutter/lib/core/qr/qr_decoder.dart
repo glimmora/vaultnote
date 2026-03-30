@@ -51,7 +51,7 @@ class QRImportSession extends Equatable {
 
     // Combine all chunks
     final combined = Uint8List.fromList([
-      for (final i = 0; i < total; i++) ...chunks[i]!,
+      for (var i = 0; i < total; i++) ...chunks[i]!,
     ]);
 
     // Extract components
@@ -69,7 +69,7 @@ class QRImportSession extends Equatable {
       ...ciphertext,
       ...authTag,
     ]);
-    final hmacKey = _deriveHmacKeyFromPassword(password, salt);
+    final hmacKey = await _deriveHmacKeyFromPassword(password, salt);
     if (!HMACSHA256.verify(dataToHmac, hmacKey, storedHmac)) {
       throw Exception('HMAC verification failed - QR may be tampered');
     }
@@ -89,7 +89,7 @@ class QRImportSession extends Equatable {
     return Note.fromJson(jsonData);
   }
 
-  Uint8List _deriveHmacKeyFromPassword(String password, Uint8List salt) async {
+  Future<Uint8List> _deriveHmacKeyFromPassword(String password, Uint8List salt) async {
     final kdf = Argon2KDF();
     final key = await kdf.deriveKey(password, salt);
     final hmacKeySeed = Uint8List.fromList(utf8.encode('VNC_HMAC_KEY'));

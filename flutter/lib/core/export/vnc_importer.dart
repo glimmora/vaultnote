@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:archive/archive.dart';
 import '../crypto/key_manager.dart';
-import 'vnc_format.dart';
+import '../storage/vnc_format.dart';
 import '../../domain/entities/note.dart';
 
 /// Import notes from .vnc container files

@@ -138,7 +138,7 @@ class VNCFormat {
   ) {
     final totalSize = headerSize + kdfParamsSize + saltSize + ivSize + ciphertext.length + authTagSize;
     final result = Uint8List(totalSize);
-    final offset = 0;
+    var offset = 0;
 
     // Header (128 bytes)
     // Magic

@@ -4,6 +4,7 @@ import 'package:path/path.dart' as path;
 import '../crypto/key_manager.dart';
 import 'vnc_format.dart';
 import '../../domain/entities/label.dart';
+import '../../domain/entities/note.dart';
 
 /// Repository for label operations
 /// All labels stored in a single labels.vnc container
