@@ -5,7 +5,7 @@
 ### Option 1: Full Setup (Recommended)
 ```bash
 # Install Flutter, Android SDK, and configure everything
-cd /root/vaultnote/flutter
+cd flutter
 ./scripts/setup.sh
 
 # Reload shell configuration
@@ -21,7 +21,7 @@ source ~/.bashrc
 ### Option 2: Environment Only (Tools Already Installed)
 ```bash
 # Just configure environment variables and aliases
-cd /root/vaultnote/flutter
+cd flutter
 ./scripts/setup_env.sh
 
 # Reload shell configuration

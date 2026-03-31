@@ -23,14 +23,33 @@ This directory contains all automation scripts for the VaultNote project.
 
 ## Scripts
 
-- `run.sh` - Master script (fix, test, build, start, cache, download, install)
-- `fix.sh` - Fix common issues
-- `test.sh` - Run tests
-- `build.sh` - Build applications
-- `start.sh` - Run applications
-- `cache-manager.sh` - Manage caches
-- `flutter-cache.sh` - Flutter cache utility
-- `node-cache.sh` - Node.js cache utility
+### Core
+
+| Script | Description |
+|--------|-------------|
+| `run.sh` | Master script (fix, test, build, start, cache, download, install) |
+| `setup.sh` | Install dependencies and configure environment |
+| `fix.sh` | Auto-detect and fix common issues |
+| `test.sh` | Run all tests with coverage |
+| `start.sh` | Run Flutter and/or Web applications |
+
+### Build
+
+| Script | Description |
+|--------|-------------|
+| `build.sh` | Build Flutter and/or Web for production |
+| `build-android.sh` | Build Android APK/AAB with signing options |
+| `build-web.sh` | Build Web application |
+| `auto-pipeline.sh` | Full automated CI/CD pipeline |
+
+### Backup & Cache
+
+| Script | Description |
+|--------|-------------|
+| `backup.sh` | Create compressed zip archive of the project |
+| `cache-manager.sh` | Unified cache management for Flutter and Node.js |
+| `flutter-cache.sh` | Flutter dependencies caching utility |
+| `node-cache.sh` | Node.js dependencies caching utility |
 
 ## Cache Management
 
@@ -48,6 +67,19 @@ This directory contains all automation scripts for the VaultNote project.
 ./scripts/run.sh cache clean
 ```
 
+## Backup
+
+```bash
+# Create a compressed backup (prompts for destination)
+./scripts/backup.sh
+```
+
+The backup script:
+- Prompts for a destination directory (defaults to `~/vaultnote-backups`)
+- Excludes `node_modules`, `.git`, and cache directories
+- Includes build output directories (`dist`, `build`, `build-output`)
+- Calculates build output size and optionally pushes metadata to GitHub
+
 ## Documentation
 
 Run any script with `-h` flag for help:
@@ -57,3 +89,7 @@ Run any script with `-h` flag for help:
 ./scripts/test.sh -h
 ./scripts/build.sh -h
 ./scripts/start.sh -h
+./scripts/backup.sh -h
+```
+
+For detailed script documentation, see the root [`README.md`](../README.md).

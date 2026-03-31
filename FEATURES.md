@@ -798,135 +798,6 @@ Payload Structure (Base64URL decoded):
 
 ---
 
-## API Reference
-
-### Crypto Module
-
-#### Argon2KDF (Flutter) / PBKDF2 (Web)
-
-```dart
-// Flutter
-final kdf = Argon2KDF();
-final key = await kdf.deriveKey(password, salt);
-// Returns: Uint8List (32 bytes)
-```
-
-```typescript
-// Web
-const key = await Argon2KDF.deriveKey(password, salt);
-// Returns: Uint8Array (32 bytes)
-```
-
-#### AES-GCM
-
-```dart
-// Flutter - Encrypt
-final (ciphertext, iv, authTag) = AESGCM.encrypt(plaintext, key, iv: iv);
-
-// Flutter - Decrypt
-final plaintext = AESGCM.decrypt(ciphertext, key, iv, authTag);
-```
-
-```typescript
-// Web - Encrypt
-const { ciphertext, iv, authTag } = await AESGCM.encrypt(plaintext, key, iv);
-
-// Web - Decrypt
-const plaintext = await AESGCM.decrypt(ciphertext, key, iv, authTag);
-```
-
-#### HMAC-SHA256
-
-```dart
-// Flutter
-final hmac = HMACSHA256.compute(data, key);
-final valid = HMACSHA256.verify(data, key, expectedHmac);
-```
-
-```typescript
-// Web
-const hmac = await HMACSHA256.compute(data, key);
-const valid = await HMACSHA256.verify(data, key, expectedHmac);
-```
-
-### Storage Module
-
-#### NoteRepository
-
-```dart
-// Flutter
-final repo = NoteRepository(keyManager);
-await repo.init();
-
-// CRUD
-await repo.createNote(note);
-await repo.updateNote(note);
-await repo.deleteNote(noteId);
-final note = await repo.getNote(noteId);
-final notes = await repo.getAllNotes();
-
-// Search
-final results = await repo.searchNotes("query");
-final byLabel = await repo.getNotesByLabel("work");
-```
-
-```typescript
-// Web
-const repo = new NoteRepository();
-repo.setKeys(masterKey, hmacKey);
-await repo.init();
-
-// CRUD
-await repo.createNote(note);
-await repo.updateNote(note);
-await repo.deleteNote(noteId);
-const note = await repo.getNote(noteId);
-const notes = await repo.getAllNotes();
-
-// Search
-const results = await repo.searchNotes("query");
-const byLabel = await repo.getNotesByLabel("work");
-```
-
-### QR Module
-
-#### QREncoder
-
-```dart
-// Flutter
-final encoder = QREncoder();
-final qrStrings = await encoder.exportNoteAsQR(note, password);
-// Returns: List<String> (one string per QR code)
-```
-
-```typescript
-// Web
-const encoder = new QREncoder();
-const qrStrings = await encoder.exportNoteAsQR(note, password);
-// Returns: string[] (one string per QR code)
-```
-
-#### QRDecoder
-
-```dart
-// Flutter
-final session = QRImportSession(total: 5, crc32: 0);
-session.addChunk(0, payload1);
-session.addChunk(1, payload2);
-// ... add all chunks
-if (session.isComplete) {
-  final note = await session.assemble(password);
-}
-```
-
-```typescript
-// Web
-const parsed = parseQRString(qrData);
-// Returns: { version, index, total, crc32, payload } | null
-```
-
----
-
 ## Changelog
 
 ### Version 1.0.0 (March 2026)
@@ -972,16 +843,16 @@ const parsed = parseQRString(qrData);
 
 ### Getting Help
 
-- **Documentation**: `/root/vaultnote/README.md`
-- **Flutter Guide**: `/root/vaultnote/flutter/scripts/README.md`
-- **Web Guide**: `/root/vaultnote/web/README.md`
-- **Features**: `/root/vaultnote/FEATURES.md` (this file)
+- **Project README**: `README.md`
+- **Flutter Guide**: `flutter/scripts/README.md`
+- **Web Guide**: `web/README.md`
+- **Features**: `FEATURES.md` (this file)
 
 ### Build Scripts
 
 #### Flutter
 ```bash
-cd /root/vaultnote/flutter
+cd flutter
 
 # Setup environment
 ./scripts/setup.sh
@@ -1001,7 +872,7 @@ cd /root/vaultnote/flutter
 
 #### Web
 ```bash
-cd /root/vaultnote/web
+cd web
 
 # Setup environment
 ./scripts/setup_env.sh

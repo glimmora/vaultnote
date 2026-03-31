@@ -64,9 +64,9 @@ vaultnote/
 │   ├── build.sh     # Build for production
 │   ├── build-android.sh  # Build Android APK
 │   ├── build-web.sh      # Build Web app
-│   └── auto-pipeline.sh  # Full CI/CD pipeline
+│   ├── auto-pipeline.sh  # Full CI/CD pipeline
+│   └── backup.sh    # Create compressed project backup
 ├── build-output/     # Build artifacts
-└── keystore/         # Signing keys
 ```
 
 ### Scripts
@@ -83,6 +83,7 @@ All automation scripts are located in the `scripts/` directory:
 | `build-android.sh` | Build Android APK/AAB with signing |
 | `build-web.sh` | Build Web application |
 | `auto-pipeline.sh` | Full automated pipeline |
+| `backup.sh` | Create compressed project backup |
 
 ### Usage Examples
 
@@ -347,4 +348,4 @@ Private - All rights reserved
 For issues and questions:
 - Check `logs/` directory for error details
 - Run `./scripts/fix.sh` for auto-repair
-- Review `SCRIPTS_SUMMARY.md` for script documentation
+- Review `scripts/README.md` for script documentation

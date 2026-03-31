@@ -31,7 +31,7 @@ Encrypted notes web application built with React, TypeScript, and Vite.
 ### Development
 
 ```bash
-cd /root/vaultnote/web
+cd web
 
 # Install dependencies (first time only)
 npm install
@@ -234,20 +234,6 @@ The `dist/` folder can be deployed to any static hosting:
 - **Firebase Hosting**: `firebase deploy`
 - **Self-hosted**: Serve with nginx/Apache
 
-### Docker
-
-```dockerfile
-FROM node:20-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-FROM nginx:alpine
-COPY --from=0 /app/dist /usr/share/nginx/html
-EXPOSE 80
-```
-
 ### Environment Variables
 
 No environment variables required for basic usage.
@@ -309,23 +295,11 @@ Required: Web Crypto API, IndexedDB
 - **Note encryption**: < 500ms
 - **Search**: < 100ms for 100 notes
 
-## Contributing
-
-1. Fork the repository
-2. Create feature branch
-3. Make changes
-4. Run tests: `./scripts/test.sh`
-5. Submit PR
-
-## License
-
-MIT License - See LICENSE file
-
 ## Links
 
-- **Flutter App**: `/root/vaultnote/flutter`
-- **Documentation**: `/root/vaultnote/README.md`
-- **Build Scripts**: `./scripts/`
+- **Flutter App**: `../flutter/`
+- **Project README**: `../README.md`
+- **Scripts**: `../scripts/`
 
 ---
 
