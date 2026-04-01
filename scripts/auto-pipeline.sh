@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# VaultNote Auto Pipeline Script
-# Fully automated pipeline: run → test → fix → re-test
+# VaultNote Automated CI/CD Pipeline
+# Complete build, test, and deployment automation
 
 set -e
 
@@ -11,43 +11,33 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 CYAN='\033[0;36m'
+MAGENTA='\033[0;35m'
 NC='\033[0m'
 
-# Configuration
 SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPTS_DIR")"
-LOG_FILE="$SCRIPTS_DIR/logs/pipeline-$(date +%Y%m%d-%H%M%S).log"
-
-# Create logs directory
-mkdir -p "$SCRIPTS_DIR/logs"
-
-# Default values
-PROJECT_TYPE="auto"
-MODE="development"
-VERBOSE=false
-MAX_RETRIES=3
-SKIP_RUN=false
-SKIP_TEST=false
-SKIP_FIX=false
-GENERATE_REPORT=true
-
-# Pipeline results
-PIPELINE_START_TIME=$(date +%s)
-PIPELINE_STATUS="SUCCESS"
-PIPELINE_ERRORS=()
-
-# Logging functions
-log() {
-    echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] [INFO]  $*" | tee -a "$LOG_FILE"
-}
-
-log_error() {
-    echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] [ERROR] $*" | tee -a "$LOG_FILE" >&2
-}
 
 print_header() {
-    echo -e "${BLUE}========================================${NC}"
-    echo -e "${BLUE}$1${NC}"
+    echo -e "${BLUE}╔════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║${NC} $1"
+    echo -e "${BLUE}╚════════════════════════════════════════╝${NC}"
+}
+
+print_success() {
+    echo -e "${GREEN}✓${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}✗${NC} $1"
+}
+
+print_info() {
+    echo -e "${YELLOW}ℹ${NC} $1"
+}
+
+print_step() {
+    echo -e "${CYAN}▶${NC} $1"
+}
     echo -e "${BLUE}========================================${NC}"
 }
 

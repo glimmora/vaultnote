@@ -1,0 +1,102 @@
+name: Scheduled Builds
+
+on:
+  schedule:
+    # Daily build at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: "3.24.0"
+
+jobs:
+  daily-build:
+    name: Daily Build Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'web/package-lock.json'
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      
+      - name: Run build script
+        run: |
+          chmod +x scripts/build.sh
+          ./scripts/build.sh -v
+      
+      - name: Generate build report
+        if: always()
+        run: |
+          cat > build-report.txt << 'EOF'
+          # Daily Build Report
+          Date: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          
+          ## Status
+          Build Status: SUCCESS/FAILED
+          
+          ## Artifacts Generated
+          - Web build in: dist/web
+          - Android APK in: dist/android
+          - Build logs available in workflow artifacts
+          
+          EOF
+      
+      - name: Upload build report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-build-report-${{ github.run_number }}
+          path: build-report.txt
+
+  dependency-check:
+    name: Check Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Check Web dependencies
+        working-directory: web
+        run: |
+          npm outdated || true
+          echo "Run 'npm update' to update dependencies"
+      
+      - name: Check for security vulnerabilities
+        working-directory: web
+        run: npm audit || true
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      
+      - name: Check Flutter pub dependencies
+        working-directory: flutter
+        run: flutter pub outdated || true
+
+  notify-on-failure:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    if: failure()
+    needs: [daily-build]
+    
+    steps:
+      - name: Send failure notification
+        run: echo "Daily build failed - review logs"

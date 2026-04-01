@@ -18,7 +18,8 @@ SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPTS_DIR")"
 FLUTTER_DIR="$PROJECT_DIR/flutter"
 WEB_DIR="$PROJECT_DIR/web"
-BUILD_OUTPUT_DIR="$PROJECT_DIR/build-output"
+BUILD_OUTPUT_DIR="$PROJECT_DIR/dist"
+BUILD_LOG_FILE="$BUILD_OUTPUT_DIR/build-$(date +%Y%m%d_%H%M%S).log"
 
 # Default values
 BUILD_FLUTTER=true
@@ -234,9 +235,13 @@ if [[ "$BUILD_FLUTTER" == true ]]; then
             if [[ -f "$BUILD_FILE" ]]; then
                 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
                 VERSION=$(grep -oP 'version: \K[^\s]+' pubspec.yaml | head -1 | cut -d'+' -f1)
-                OUTPUT_FILE="$BUILD_OUTPUT_DIR/VaultNote-v${VERSION}-${TIMESTAMP}-${ABI}.apk"
+                OUTPUT_FILE="$BUILD_OUTPUT_DIR/app-${ABI_NAME}-${VERSION}.apk"
                 
                 cp "$BUILD_FILE" "$OUTPUT_FILE"
+                
+                # Also copy to dist/android/apk for standardized output
+                mkdir -p "$PROJECT_DIR/dist/android/apk"
+                cp "$BUILD_FILE" "$PROJECT_DIR/dist/android/apk/app-${ABI_NAME}-${VERSION}.apk"
                 
                 # Sign APK if requested
                 if [[ "$SIGN_BUILD" == true ]]; then
@@ -247,6 +252,14 @@ if [[ "$BUILD_FLUTTER" == true ]]; then
                             -storepass "$KEYSTORE_PASSWORD" \
                             -keypass "$KEY_PASSWORD" \
                             "$OUTPUT_FILE" "$KEY_ALIAS"
+                        
+                        # Also sign the copied version
+                        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+                            -keystore "$KEYSTORE_FILE" \
+                            -storepass "$KEYSTORE_PASSWORD" \
+                            -keypass "$KEY_PASSWORD" \
+                            "$PROJECT_DIR/dist/android/apk/app-${ABI_NAME}-${VERSION}.apk" "$KEY_ALIAS"
+                        
                         print_success "APK signed for $ABI"
                     else
                         print_error "Keystore not found at $KEYSTORE_FILE"
@@ -256,9 +269,11 @@ if [[ "$BUILD_FLUTTER" == true ]]; then
                 
                 # Generate checksum
                 sha256sum "$OUTPUT_FILE" > "$OUTPUT_FILE.sha256"
+                sha256sum "$PROJECT_DIR/dist/android/apk/app-${ABI_NAME}-${VERSION}.apk" > "$PROJECT_DIR/dist/android/apk/app-${ABI_NAME}-${VERSION}.apk.sha256"
                 
                 print_success "APK built for $ABI"
                 print_info "Output: $OUTPUT_FILE"
+                print_info "Dist: $PROJECT_DIR/dist/android/apk/app-${ABI_NAME}-${VERSION}.apk"
                 print_info "Size: $(du -h "$OUTPUT_FILE" | cut -f1)"
             else
                 print_error "APK build failed for $ABI - output file not found"
@@ -286,8 +301,12 @@ if [[ "$BUILD_FLUTTER" == true ]]; then
             
             if [[ "$FLUTTER_BUILD_TYPE" == "appbundle" ]]; then
                 OUTPUT_FILE="$BUILD_OUTPUT_DIR/VaultNote-v${VERSION}-${TIMESTAMP}.aab"
+                mkdir -p "$PROJECT_DIR/dist/android/aab"
+                cp "$BUILD_FILE" "$PROJECT_DIR/dist/android/aab/app-release-${VERSION}.aab"
             else
                 OUTPUT_FILE="$BUILD_OUTPUT_DIR/VaultNote-v${VERSION}-${TIMESTAMP}.apk"
+                mkdir -p "$PROJECT_DIR/dist/android/apk"
+                cp "$BUILD_FILE" "$PROJECT_DIR/dist/android/apk/app-release-${VERSION}.apk"
             fi
             
             cp "$BUILD_FILE" "$OUTPUT_FILE"
@@ -303,6 +322,12 @@ if [[ "$BUILD_FLUTTER" == true ]]; then
                             -storepass "$KEYSTORE_PASSWORD" \
                             -keypass "$KEY_PASSWORD" \
                             "$OUTPUT_FILE" "$KEY_ALIAS"
+                        
+                        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+                            -keystore "$KEYSTORE_FILE" \
+                            -storepass "$KEYSTORE_PASSWORD" \
+                            -keypass "$KEY_PASSWORD" \
+                            "$PROJECT_DIR/dist/android/aab/app-release-${VERSION}.aab" "$KEY_ALIAS"
                     else
                         # For APK, we can use apksigner or jarsigner
                         jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
@@ -310,6 +335,12 @@ if [[ "$BUILD_FLUTTER" == true ]]; then
                             -storepass "$KEYSTORE_PASSWORD" \
                             -keypass "$KEY_PASSWORD" \
                             "$OUTPUT_FILE" "$KEY_ALIAS"
+                        
+                        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+                            -keystore "$KEYSTORE_FILE" \
+                            -storepass "$KEYSTORE_PASSWORD" \
+                            -keypass "$KEY_PASSWORD" \
+                            "$PROJECT_DIR/dist/android/apk/app-release-${VERSION}.apk" "$KEY_ALIAS"
                     fi
                     print_success "$FLUTTER_BUILD_TYPE signed successfully"
                 else
@@ -320,9 +351,15 @@ if [[ "$BUILD_FLUTTER" == true ]]; then
             
             # Generate checksum
             sha256sum "$OUTPUT_FILE" > "$OUTPUT_FILE.sha256"
+            if [[ "$FLUTTER_BUILD_TYPE" == "appbundle" ]]; then
+                sha256sum "$PROJECT_DIR/dist/android/aab/app-release-${VERSION}.aab" > "$PROJECT_DIR/dist/android/aab/app-release-${VERSION}.aab.sha256"
+            else
+                sha256sum "$PROJECT_DIR/dist/android/apk/app-release-${VERSION}.apk" > "$PROJECT_DIR/dist/android/apk/app-release-${VERSION}.apk.sha256"
+            fi
             
             print_success "Flutter build completed"
             print_info "Output: $OUTPUT_FILE"
+            print_info "Dist: $PROJECT_DIR/dist/android/$(if [[ "$FLUTTER_BUILD_TYPE" == "appbundle" ]]; then echo "aab"; else echo "apk"; fi)/"
             print_info "Size: $(du -h "$OUTPUT_FILE" | cut -f1)"
         else
             print_error "Flutter build failed - output file not found"
@@ -376,7 +413,11 @@ if [[ "$BUILD_WEB" == true ]]; then
         
         cp -r dist "$OUTPUT_DIR"
         
-        # Create archive
+        # Also copy to dist/web for standardized output
+        rm -rf "$PROJECT_DIR/dist/web"
+        cp -r dist "$PROJECT_DIR/dist/web"
+        
+        # Create archive in build-output
         cd "$BUILD_OUTPUT_DIR"
         tar -czf "vaultnote-web-v${VERSION}-${TIMESTAMP}.tar.gz" "vaultnote-web-v${VERSION}-${TIMESTAMP}"
         rm -rf "vaultnote-web-v${VERSION}-${TIMESTAMP}"
@@ -384,8 +425,17 @@ if [[ "$BUILD_WEB" == true ]]; then
         ARCHIVE_FILE="$BUILD_OUTPUT_DIR/vaultnote-web-v${VERSION}-${TIMESTAMP}.tar.gz"
         sha256sum "$ARCHIVE_FILE" > "$ARCHIVE_FILE.sha256"
         
+        # Also create a manifest in dist/web
+        cat > "$PROJECT_DIR/dist/web/BUILD_INFO.txt" << EOF
+VaultNote Web Build
+Version: ${VERSION}
+Build Date: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+Build Mode: ${WEB_BUILD_MODE}
+EOF
+        
         print_success "Web build completed"
         print_info "Output: $ARCHIVE_FILE"
+        print_info "Dist: $PROJECT_DIR/dist/web/"
         print_info "Size: $(du -h "$ARCHIVE_FILE" | cut -f1)"
     else
         print_error "Web build failed - output directory not found"

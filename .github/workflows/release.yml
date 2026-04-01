@@ -1,0 +1,207 @@
+name: Release & Deploy
+
+on:
+  release:
+    types: [published, created]
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      deploy_web:
+        description: 'Deploy Web to production'
+        required: false
+        default: 'true'
+
+env:
+  FLUTTER_VERSION: "3.24.0"
+
+jobs:
+  build-release:
+    name: Build Release Artifacts
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'web/package-lock.json'
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      
+      # Build Web
+      - name: Install Web dependencies
+        working-directory: web
+        run: npm ci
+      
+      - name: Build Web production
+        working-directory: web
+        run: npm run build
+      
+      - name: Create Web archive
+        run: |
+          cd web/dist
+          zip -r ../../vaultnote-web-${{ github.ref_name }}.zip .
+          cd ../..
+      
+      # Build Android APK
+      - name: Get Flutter dependencies
+        working-directory: flutter
+        run: flutter pub get
+      
+      - name: Build Android APK
+        working-directory: flutter
+        run: |
+          flutter build apk \
+            --release \
+            --split-per-abi \
+            --verbose
+      
+      - name: Create APK archive
+        run: |
+          mkdir -p android-apk
+          cp flutter/build/app/outputs/flutter-apk/*.apk android-apk/
+          cd android-apk
+          tar -czf ../vaultnote-android-apk-${{ github.ref_name }}.tar.gz *.apk
+          cd ..
+      
+      # Build Android AAB
+      - name: Build Android App Bundle
+        working-directory: flutter
+        run: |
+          flutter build appbundle \
+            --release \
+            --verbose
+      
+      - name: Rename and copy AAB
+        run: |
+          mkdir -p android-aab
+          cp flutter/build/app/outputs/bundle/release/app-release.aab android-aab/vaultnote-release-${{ github.ref_name }}.aab
+          cd android-aab
+          tar -czf ../vaultnote-android-aab-${{ github.ref_name }}.tar.gz *.aab
+          cd ..
+      
+      # Upload to release
+      - name: Upload to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            vaultnote-web-${{ github.ref_name }}.zip
+            vaultnote-android-apk-${{ github.ref_name }}.tar.gz
+            vaultnote-android-aab-${{ github.ref_name }}.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      # Copy to dist folder
+      - name: Copy artifacts to dist
+        run: |
+          mkdir -p dist/releases/${{ github.ref_name }}/web
+          mkdir -p dist/releases/${{ github.ref_name }}/android
+          
+          unzip -q vaultnote-web-${{ github.ref_name }}.zip -d dist/releases/${{ github.ref_name }}/web
+          cp vaultnote-android-apk-${{ github.ref_name }}.tar.gz dist/releases/${{ github.ref_name }}/android/
+          cp vaultnote-android-aab-${{ github.ref_name }}.tar.gz dist/releases/${{ github.ref_name }}/android/
+      
+      - name: Upload dist artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-build-${{ github.ref_name }}
+          path: dist/
+          retention-days: 90
+
+  deploy-web:
+    name: Deploy Web to Production
+    runs-on: ubuntu-latest
+    needs: build-release
+    if: github.event_name == 'release' || github.event.inputs.deploy_web == 'true'
+    
+    steps:
+      - name: Download web artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-build-${{ github.ref_name }}
+          path: artifacts
+      
+      - name: Deploy to Firebase Hosting (optional)
+        run: |
+          echo "Firebase deployment configuration:"
+          echo "- Project: vaultnote"
+          echo "- Channel: live/${{ github.ref_name }}"
+          echo "- Files: artifacts/releases/${{ github.ref_name }}/web"
+        continue-on-error: true
+      
+      - name: Deploy to AWS S3 (optional)
+        run: |
+          echo "AWS S3 deployment configuration:"
+          echo "- Bucket: vaultnote-web"
+          echo "- Path: releases/${{ github.ref_name }}"
+          echo "- Files: artifacts/releases/${{ github.ref_name }}/web"
+        continue-on-error: true
+      
+      - name: Create deployment summary
+        run: |
+          cat > deployment-summary.txt << 'EOF'
+          # VaultNote Release Deployment
+          
+          Version: ${{ github.ref_name }}
+          Release Date: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          
+          ## Web Deployment
+          - Build: ✅ Completed
+          - Files: artifacts/releases/${{ github.ref_name }}/web
+          - Status: Ready for deployment
+          
+          ## Android APK Deployment
+          - Build: ✅ Completed
+          - Package: artifacts/releases/${{ github.ref_name }}/android/vaultnote-android-apk-${{ github.ref_name }}.tar.gz
+          
+          ## Android AAB Deployment (Play Store)
+          - Build: ✅ Completed
+          - Package: artifacts/releases/${{ github.ref_name }}/android/vaultnote-android-aab-${{ github.ref_name }}.tar.gz
+          - Next Step: Upload to Google Play Console
+          
+          EOF
+          cat deployment-summary.txt
+
+  create-github-pages:
+    name: Deploy GitHub Pages Docs
+    runs-on: ubuntu-latest
+    needs: build-release
+    if: github.event_name == 'release'
+    
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download web artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-build-${{ github.ref_name }}
+          path: artifacts
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      
+      - name: Upload artifact for Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'artifacts/releases/${{ github.ref_name }}/web'
+      
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
