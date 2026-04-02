@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:archive/archive.dart';
 import 'package:equatable/equatable.dart';
 import '../crypto/argon2_kdf.dart';
 import '../crypto/aes_gcm.dart';

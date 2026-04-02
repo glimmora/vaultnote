@@ -165,6 +165,21 @@ class NoteCubit extends Cubit<NoteState> {
     } catch (e) {
       emit(state.copyWith(error: e.toString()));
     }
+  }
+
+  Future<void> archiveNote(String noteId, bool archive) async {
+    try {
+      final note = state.notes.firstWhere(
+        (n) => n.id == noteId,
+        orElse: () => throw Exception('Note not found: $noteId'),
+      );
+      final updated = _archiveNote.execute(note, archive);
+      await _noteRepository.updateNote(updated);
+      await loadNotes();
+    } catch (e) {
+      emit(state.copyWith(error: e.toString()));
+    }
+  }
 
   Future<void> searchNotes(String query) async {
     emit(state.copyWith(searchQuery: query));

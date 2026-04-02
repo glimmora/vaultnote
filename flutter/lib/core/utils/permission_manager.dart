@@ -18,33 +18,9 @@ class PermissionManager {
     }
   }
 
-  static Future<bool> requestBiometric() async {
-    try {
-      final status = await Permission.biometric.status;
-      if (status.isGranted) return true;
-
-      if (status.isPermanentlyDenied) {
-        return false;
-      }
-
-      final result = await Permission.biometric.request();
-      return result.isGranted;
-    } catch (e) {
-      return false;
-    }
-  }
-
   static Future<bool> isCameraGranted() async {
     try {
       return await Permission.camera.status.isGranted;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  static Future<bool> isBiometricGranted() async {
-    try {
-      return await Permission.biometric.status.isGranted;
     } catch (e) {
       return false;
     }

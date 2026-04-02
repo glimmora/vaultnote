@@ -22,10 +22,6 @@ void main() async {
     FlutterError.presentError(details);
   };
 
-  PlatformDispatcher.instance.onError = (error, stack) {
-    return true;
-  };
-
   try {
     final keyManager = KeyManager();
     final securePrefs = SecurePrefs();

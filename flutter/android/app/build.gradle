@@ -31,7 +31,7 @@ if (flutterVersionName == null) {
 
 android {
     namespace "com.vaultnote.vaultnote"
-    compileSdkVersion 34
+    compileSdkVersion 36
     ndkVersion flutter.ndkVersion
 
     compileOptions {
@@ -72,12 +72,6 @@ android {
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
-        debug {
-            signingConfig signingConfigs.debug
-            minifyEnabled false
-            shrinkResources false
-        }
-    }
         debug {
             signingConfig signingConfigs.debug
             minifyEnabled false
