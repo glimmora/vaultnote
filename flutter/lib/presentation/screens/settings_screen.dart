@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:share_plus/share_plus.dart';
 import '../cubits/crypto_cubit.dart';
 import '../cubits/note_cubit.dart';
 
@@ -17,7 +16,6 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Import/Export Section
           _buildSectionHeader(context, 'Import & Export'),
           Card(
             child: Column(
@@ -30,6 +28,8 @@ class SettingsScreen extends StatelessWidget {
                   onTap: () {
                     Navigator.pushNamed(context, '/qr-import');
                   },
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  minTileHeight: 56,
                 ),
                 const Divider(height: 1),
                 ListTile(
@@ -51,8 +51,6 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          
-          // Security Section
           _buildSectionHeader(context, 'Security'),
           Card(
             child: Column(
@@ -63,10 +61,8 @@ class SettingsScreen extends StatelessWidget {
                       secondary: const Icon(Icons.fingerprint),
                       title: const Text('Biometric Unlock'),
                       subtitle: const Text('Use fingerprint or face to unlock'),
-                      value: false, // TODO: Load from settings
-                      onChanged: (value) {
-                        // TODO: Implement biometric setup
-                      },
+                      value: false,
+                      onChanged: (value) {},
                     );
                   },
                 ),
@@ -102,8 +98,6 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          
-          // Appearance Section
           _buildSectionHeader(context, 'Appearance'),
           Card(
             child: Column(
@@ -114,7 +108,6 @@ class SettingsScreen extends StatelessWidget {
                   subtitle: const Text('Use dark theme'),
                   value: Theme.of(context).brightness == Brightness.dark,
                   onChanged: (value) {
-                    // TODO: Implement theme toggle
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Theme toggle coming soon')),
                     );
@@ -124,8 +117,6 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          
-          // About Section
           _buildSectionHeader(context, 'About'),
           Card(
             child: Column(
@@ -146,16 +137,12 @@ class SettingsScreen extends StatelessWidget {
                   leading: const Icon(Icons.description),
                   title: const Text('Privacy Policy'),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    // TODO: Show privacy policy
-                  },
+                  onTap: () {},
                 ),
               ],
             ),
           ),
           const SizedBox(height: 32),
-          
-          // App info
           Center(
             child: Column(
               children: [
@@ -202,8 +189,10 @@ class SettingsScreen extends StatelessWidget {
   void _importFromFile(BuildContext context) async {
     try {
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.any,
+        type: FileType.custom,
+        allowedExtensions: ['vnc'],
         allowMultiple: false,
+        withData: true,
       );
 
       if (result == null || result.files.isEmpty) return;
@@ -211,36 +200,53 @@ class SettingsScreen extends StatelessWidget {
       final file = result.files.first;
       final bytes = file.bytes;
 
-      if (bytes == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to read file')),
-        );
+      if (bytes == null || bytes.isEmpty) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to read file'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
         return;
       }
 
       final notes = await context.read<CryptoCubit>().importFile(bytes);
-      
-      if (notes.isNotEmpty) {
-        await context.read<NoteCubit>().loadNotes();
+
+      if (context.mounted) {
+        if (notes.isNotEmpty) {
+          await context.read<NoteCubit>().loadNotes();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Successfully imported ${notes.length} note(s)'),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No notes found in file'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Successfully imported ${notes.length} note(s)'),
-            backgroundColor: Colors.green,
+            content: Text('Import failed: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Import failed: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 
   void _exportAllNotes(BuildContext context) async {
-    // TODO: Implement export all notes
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Export all notes coming soon')),
     );
@@ -256,31 +262,19 @@ class SettingsScreen extends StatelessWidget {
           children: [
             ListTile(
               title: const Text('1 minute'),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Save setting
-              },
+              onTap: () => Navigator.pop(context),
             ),
             ListTile(
               title: const Text('5 minutes'),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Save setting
-              },
+              onTap: () => Navigator.pop(context),
             ),
             ListTile(
               title: const Text('10 minutes'),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Save setting
-              },
+              onTap: () => Navigator.pop(context),
             ),
             ListTile(
               title: const Text('Never'),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Save setting
-              },
+              onTap: () => Navigator.pop(context),
             ),
           ],
         ),
@@ -295,7 +289,6 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _changePassword(BuildContext context) {
-    // TODO: Implement change password
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Change password coming soon')),
     );

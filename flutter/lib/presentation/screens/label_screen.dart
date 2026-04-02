@@ -312,6 +312,7 @@ class _LabelScreenState extends State<LabelScreen> {
       return const Color(0xFF4285F4);
     }
   }
+}
       return Color(int.parse(hex.substring(1), radix: 16) + 0xFF000000);
     } catch (e) {
       return const Color(0xFF4285F4);

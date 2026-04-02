@@ -12,22 +12,26 @@ class Argon2KDF {
 
   /// Derive a 256-bit key from password and salt
   Future<Uint8List> deriveKey(String password, Uint8List salt) async {
-    final params = Argon2Parameters(
-      Argon2Parameters.ARGON2_id,
-      salt,
-      iterations: timeCost,
-      memory: memoryCost,
-      lanes: parallelism,
-    );
-    
-    final generator = Argon2BytesGenerator();
-    generator.init(params);
-    
-    final passwordBytes = Uint8List.fromList(password.codeUnits);
-    final result = Uint8List(derivedKeyLength);
-    generator.generateBytes(passwordBytes, result, 0, derivedKeyLength);
-    
-    return result;
+    try {
+      final params = Argon2Parameters(
+        Argon2Parameters.ARGON2_id,
+        salt,
+        iterations: timeCost,
+        memory: memoryCost,
+        lanes: parallelism,
+      );
+      
+      final generator = Argon2BytesGenerator();
+      generator.init(params);
+      
+      final passwordBytes = Uint8List.fromList(password.codeUnits);
+      final result = Uint8List(derivedKeyLength);
+      generator.generateBytes(passwordBytes, result, 0, derivedKeyLength);
+      
+      return result;
+    } catch (e) {
+      throw Exception('Key derivation failed: $e');
+    }
   }
 
   /// Generate a new random salt

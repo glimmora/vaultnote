@@ -48,19 +48,6 @@ class NoteRepository {
     }
   }
 
-      final data = await VNCFormat.encryptNote(
-        note,
-        _keyManager.masterKey!,
-        _keyManager.hmacKey!,
-      );
-
-      final file = File(_getNotePath(note.id));
-      await file.writeAsBytes(data);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
   /// Update an existing note
   Future<void> updateNote(Note note) async {
     await createNote(note); // Same as create (upsert)
@@ -77,10 +64,6 @@ class NoteRepository {
       rethrow;
     }
   }
-    } catch (e) {
-      rethrow;
-    }
-  }
 
   /// Get a single note by ID
   Future<Note?> getNote(String noteId) async {
@@ -88,22 +71,6 @@ class NoteRepository {
       if (!_keyManager.isUnlocked) {
         throw StateError('KeyManager not unlocked');
       }
-
-      final file = File(_getNotePath(noteId));
-      if (!await file.exists()) {
-        return null;
-      }
-
-      final data = await file.readAsBytes();
-      return await VNCFormat.decryptNote(
-        data,
-        _keyManager.masterKey!,
-        _keyManager.hmacKey!,
-      );
-    } catch (e) {
-      return null;
-    }
-  }
 
       final file = File(_getNotePath(noteId));
       if (!await file.exists()) {

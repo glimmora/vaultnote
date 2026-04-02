@@ -113,11 +113,6 @@ class NoteCard extends StatelessWidget {
       return const Color(0xFFFFFFFF);
     }
   }
-      return Color(int.parse(hex.substring(1), radix: 16) + 0xFF000000);
-    } catch (e) {
-      return const Color(0xFFFFFFFF);
-    }
-  }
 
   Color _getLabelColor(String labelName) {
     // Default label colors based on name hash

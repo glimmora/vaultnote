@@ -17,13 +17,47 @@ class _UnlockScreenState extends State<UnlockScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isSetupMode = false;
-  bool _isLoading = false;
+  String? _passwordError;
+  String? _confirmPasswordError;
 
   @override
   void dispose() {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  bool _validatePassword() {
+    setState(() {
+      _passwordError = null;
+      _confirmPasswordError = null;
+    });
+
+    final password = _passwordController.text;
+    if (password.isEmpty) {
+      setState(() {
+        _passwordError = 'Password cannot be empty';
+      });
+      return false;
+    }
+
+    if (_isSetupMode) {
+      if (password.length < 6) {
+        setState(() {
+          _passwordError = 'Password must be at least 6 characters';
+        });
+        return false;
+      }
+
+      if (_confirmPasswordController.text != password) {
+        setState(() {
+          _confirmPasswordError = 'Passwords do not match';
+        });
+        return false;
+      }
+    }
+
+    return true;
   }
 
   @override
@@ -64,6 +98,7 @@ class _UnlockScreenState extends State<UnlockScreen> {
                 TextField(
                   controller: _passwordController,
                   obscureText: !_isPasswordVisible,
+                  textInputAction: _isSetupMode ? TextInputAction.next : TextInputAction.done,
                   decoration: InputDecoration(
                     labelText: 'Password',
                     hintText: 'Enter your password',
@@ -83,7 +118,15 @@ class _UnlockScreenState extends State<UnlockScreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
+                    errorText: _passwordError,
                   ),
+                  onChanged: (_) {
+                    if (_passwordError != null) {
+                      setState(() {
+                        _passwordError = null;
+                      });
+                    }
+                  },
                   onSubmitted: (_) => _handleSubmit(cryptoCubit),
                 ),
                 if (_isSetupMode) ...[
@@ -91,6 +134,7 @@ class _UnlockScreenState extends State<UnlockScreen> {
                   TextField(
                     controller: _confirmPasswordController,
                     obscureText: !_isPasswordVisible,
+                    textInputAction: TextInputAction.done,
                     decoration: InputDecoration(
                       labelText: 'Confirm Password',
                       hintText: 'Confirm your password',
@@ -98,7 +142,15 @@ class _UnlockScreenState extends State<UnlockScreen> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
+                      errorText: _confirmPasswordError,
                     ),
+                    onChanged: (_) {
+                      if (_confirmPasswordError != null) {
+                        setState(() {
+                          _confirmPasswordError = null;
+                        });
+                      }
+                    },
                     onSubmitted: (_) => _handleSubmit(cryptoCubit),
                   ),
                 ],
@@ -107,14 +159,8 @@ class _UnlockScreenState extends State<UnlockScreen> {
                   width: double.infinity,
                   height: 56,
                   child: FilledButton.icon(
-                    onPressed: _isLoading ? null : () => _handleSubmit(cryptoCubit),
-                    icon: _isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.lock_open),
+                    onPressed: () => _handleSubmit(cryptoCubit),
+                    icon: const Icon(Icons.lock_open),
                     label: Text(_isSetupMode ? 'Set Password' : 'Unlock'),
                   ),
                 ),
@@ -146,19 +192,16 @@ class _UnlockScreenState extends State<UnlockScreen> {
                 ],
                 BlocListener<CryptoCubit, CryptoState>(
                   listener: (context, state) {
-                    setState(() {
-                      _isLoading = false;
-                    });
                     if (state.error != null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(state.error!),
                           backgroundColor: Colors.red,
+                          behavior: SnackBarBehavior.floating,
                         ),
                       );
                     }
                     if (state.isUnlocked) {
-                      // Load notes after unlock
                       context.read<NoteCubit>().loadNotes();
                       context.read<LabelCubit>().loadLabels();
                     }
@@ -174,39 +217,12 @@ class _UnlockScreenState extends State<UnlockScreen> {
   }
 
   void _handleSubmit(CryptoCubit cryptoCubit) async {
-    if (_passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a password')),
-      );
-      return;
-    }
-
-    if (_isSetupMode) {
-      if (_passwordController.text != _confirmPasswordController.text) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Passwords do not match')),
-        );
-        return;
-      }
-      if (_passwordController.text.length < 6) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Password must be at least 6 characters')),
-        );
-        return;
-      }
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
+    if (!_validatePassword()) return;
 
     if (_isSetupMode) {
       await cryptoCubit.setupNewPassword(_passwordController.text);
     } else {
-      final success = await cryptoCubit.unlockWithPassword(_passwordController.text);
-      if (success) {
-        _passwordController.clear();
-      }
+      await cryptoCubit.unlockWithPassword(_passwordController.text);
     }
   }
 }

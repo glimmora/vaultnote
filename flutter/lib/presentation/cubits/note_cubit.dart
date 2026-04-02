@@ -1,8 +1,5 @@
-import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import '../../core/crypto/key_manager.dart';
-import '../../core/storage/secure_prefs.dart';
 import '../../core/storage/note_repository.dart';
 import '../../core/storage/label_repository.dart';
 import '../../domain/entities/note.dart';
@@ -168,36 +165,6 @@ class NoteCubit extends Cubit<NoteState> {
     } catch (e) {
       emit(state.copyWith(error: e.toString()));
     }
-  }
-
-  Future<void> archiveNote(String noteId, bool archive) async {
-    try {
-      final note = state.notes.firstWhere(
-        (n) => n.id == noteId,
-        orElse: () => throw Exception('Note not found: $noteId'),
-      );
-      final updated = _archiveNote.execute(note, archive);
-      await _noteRepository.updateNote(updated);
-      await loadNotes();
-    } catch (e) {
-      emit(state.copyWith(error: e.toString()));
-    }
-  }
-  }
-
-  Future<void> archiveNote(String noteId, bool archive) async {
-    try {
-      final note = state.notes.firstWhere(
-        (n) => n.id == noteId,
-        orElse: () => throw Exception('Note not found: $noteId'),
-      );
-      final updated = _archiveNote.execute(note, archive);
-      await _noteRepository.updateNote(updated);
-      await loadNotes();
-    } catch (e) {
-      emit(state.copyWith(error: e.toString()));
-    }
-  }
 
   Future<void> searchNotes(String query) async {
     emit(state.copyWith(searchQuery: query));

@@ -5,7 +5,6 @@ import 'core/crypto/key_manager.dart';
 import 'core/storage/secure_prefs.dart';
 import 'core/storage/note_repository.dart';
 import 'core/storage/label_repository.dart';
-import 'core/export/vnc_exporter.dart';
 import 'core/export/vnc_importer.dart';
 import 'domain/entities/note.dart';
 import 'presentation/cubits/note_cubit.dart';
@@ -30,7 +29,6 @@ class VaultNoteApp extends StatelessWidget {
           create: (context) => CryptoCubit(
             context.read<KeyManager>(),
             context.read<SecurePrefs>(),
-            context.read<VNCExporter>(),
             context.read<VNCImporter>(),
           )..initialize(),
         ),
@@ -112,20 +110,20 @@ class VaultNoteApp extends StatelessWidget {
                 builder: (_) => const NoteEditorScreen(),
               );
             case '/note/edit':
+              final note = settings.arguments is Note ? settings.arguments as Note : null;
+              if (note == null) return null;
               return MaterialPageRoute(
-                builder: (_) => NoteEditorScreen(
-                  note: settings.arguments as Note,
-                ),
+                builder: (_) => NoteEditorScreen(note: note),
               );
             case '/labels':
               return MaterialPageRoute(
                 builder: (_) => const LabelScreen(),
               );
             case '/qr-export':
+              final qrNote = settings.arguments is Note ? settings.arguments as Note : null;
+              if (qrNote == null) return null;
               return MaterialPageRoute(
-                builder: (_) => QRExportScreen(
-                  note: settings.arguments as Note,
-                ),
+                builder: (_) => QRExportScreen(note: qrNote),
               );
             case '/qr-import':
               return MaterialPageRoute(

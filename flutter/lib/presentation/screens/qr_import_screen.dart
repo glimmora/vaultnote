@@ -21,57 +21,6 @@ class _QRImportScreenState extends State<QRImportScreen> {
   bool _showPasswordDialog = false;
   bool _cameraPermissionGranted = false;
   bool _permissionChecked = false;
-  bool _cameraPermissionGranted = false;
-  bool _permissionChecked = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkCameraPermission();
-  }
-
-  Future<void> _checkCameraPermission() async {
-    final granted = await PermissionManager.requestCamera();
-    if (mounted) {
-      setState(() {
-        _cameraPermissionGranted = granted;
-        _permissionChecked = true;
-      });
-      if (!granted) {
-        _showPermissionDeniedDialog();
-      }
-    }
-  }
-
-  void _showPermissionDeniedDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('Camera Permission Required'),
-        content: const Text(
-          'This app needs camera access to scan QR codes. '
-          'Please grant camera permission in app settings.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-            child: const Text('Go Back'),
-          ),
-          FilledButton(
-            onPressed: () {
-              PermissionManager.openSettings();
-              Navigator.pop(context);
-            },
-            child: const Text('Open Settings'),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   void initState() {

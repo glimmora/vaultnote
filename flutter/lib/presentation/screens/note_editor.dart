@@ -326,11 +326,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
       return const Color(0xFFFFFFFF);
     }
   }
-      return Color(int.parse(hex.substring(1), radix: 16) + 0xFF000000);
-    } catch (e) {
-      return const Color(0xFFFFFFFF);
-    }
-  }
 
   Color _getLabelColor(String labelName) {
     try {
@@ -343,7 +338,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     } catch (e) {
       return const Color(0xFF4285F4).withOpacity(0.3);
     }
-  }
   }
 
   Future<void> _saveNote() async {

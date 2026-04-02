@@ -20,7 +20,6 @@ class _QRExportScreenState extends State<QRExportScreen> {
   bool _hasPassword = false;
   bool _isGenerating = false;
   int _currentQrIndex = 0;
-  int _currentQrIndex = 0;
 
   @override
   void dispose() {
@@ -189,20 +188,6 @@ class _QRExportScreenState extends State<QRExportScreen> {
                           icon: const Icon(Icons.arrow_back),
                           label: const Text('Previous'),
                         ),
-                      ),
-                    if (currentIndex > 0) const SizedBox(width: 16),
-                    if (currentIndex < totalChunks - 1)
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: () {
-                            setState(() {
-                              _currentQrIndex = currentIndex + 1;
-                            });
-                          },
-                          icon: const Icon(Icons.arrow_forward),
-                          label: const Text('Next'),
-                        ),
-                      ),
                       ),
                     if (currentIndex > 0) const SizedBox(width: 16),
                     if (currentIndex < totalChunks - 1)
