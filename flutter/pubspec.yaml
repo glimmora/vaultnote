@@ -5,6 +5,8 @@ version: 1.0.0+1
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.16.0'
+  flutter: '>=3.16.0'
 
 dependencies:
   flutter:
@@ -27,7 +29,6 @@ dependencies:
 
   # QR
   qr_flutter: ^4.1.0
-  mobile_scanner: ^5.2.3
   qr_code_scanner_plus: ^2.0.0
 
   # File I/O

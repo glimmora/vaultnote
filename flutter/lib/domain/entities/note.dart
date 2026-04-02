@@ -62,17 +62,43 @@ class Note extends Equatable {
   }
 
   factory Note.fromJson(Map<String, dynamic> json) {
+    DateTime parseDate(String? dateStr, DateTime fallback) {
+      if (dateStr == null || dateStr.isEmpty) return fallback;
+      try {
+        return DateTime.parse(dateStr);
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    final now = DateTime.now();
     return Note(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      body: json['body'] as String,
-      labels: (json['labels'] as List<dynamic>?)?.cast<String>() ?? [],
-      color: json['color'] as String? ?? '#FFFFFF',
-      created: DateTime.parse(json['created'] as String),
-      modified: DateTime.parse(json['modified'] as String),
-      pinned: json['pinned'] as bool? ?? false,
-      archived: json['archived'] as bool? ?? false,
+      id: json['id'] as String? ?? '',
+      title: json['title'] as String? ?? 'Untitled',
+      body: json['body'] as String? ?? '',
+      labels: (json['labels'] is List)
+          ? (json['labels'] as List)
+              .map((e) => e.toString())
+              .toList()
+          : [],
+      color: _validateHexColor(json['color'] as String?),
+      created: parseDate(json['created'] as String?, now),
+      modified: parseDate(json['modified'] as String?, now),
+      pinned: json['pinned'] == true,
+      archived: json['archived'] == true,
     );
+  }
+
+  static String _validateHexColor(String? hex) {
+    if (hex == null || hex.isEmpty) return '#FFFFFF';
+    if (!hex.startsWith('#')) return '#FFFFFF';
+    if (hex.length != 7) return '#FFFFFF';
+    try {
+      int.parse(hex.substring(1), radix: 16);
+      return hex;
+    } catch (e) {
+      return '#FFFFFF';
+    }
   }
 
   @override

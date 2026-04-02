@@ -99,15 +99,13 @@ class LabelCubit extends Cubit<LabelState> {
 
   Future<void> deleteLabel(String labelId) async {
     try {
-      // Get the label name before deleting
-      final labelToDelete = state.labels.firstWhere((l) => l.id == labelId);
+      final labelToDelete = state.labels.firstWhere(
+        (l) => l.id == labelId,
+        orElse: () => throw Exception('Label not found: $labelId'),
+      );
       
-      // Delete from labels list
       await _labelRepository.deleteLabel(labelId);
-      
-      // Remove label from all notes
       await _noteRepository.removeLabelFromNotes(labelToDelete.name);
-      
       await loadLabels();
     } catch (e) {
       emit(state.copyWith(error: e.toString()));

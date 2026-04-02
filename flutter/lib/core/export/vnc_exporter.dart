@@ -19,10 +19,16 @@ class VNCExporter {
       throw StateError('KeyManager not unlocked');
     }
 
+    final masterKey = _keyManager.masterKey;
+    final hmacKey = _keyManager.hmacKey;
+    if (masterKey == null || hmacKey == null) {
+      throw StateError('Encryption keys not available');
+    }
+
     final data = await VNCFormat.encryptNote(
       note,
-      _keyManager.masterKey!,
-      _keyManager.hmacKey!,
+      masterKey,
+      hmacKey,
     );
 
     final dir = Directory(outputDir);
@@ -44,14 +50,20 @@ class VNCExporter {
       throw StateError('KeyManager not unlocked');
     }
 
+    final masterKey = _keyManager.masterKey;
+    final hmacKey = _keyManager.hmacKey;
+    if (masterKey == null || hmacKey == null) {
+      throw StateError('Encryption keys not available');
+    }
+
     // Create a tar-like container with all notes
     final container = <String, Uint8List>{};
     
     for (final note in notes) {
       final data = await VNCFormat.encryptNote(
         note,
-        _keyManager.masterKey!,
-        _keyManager.hmacKey!,
+        masterKey,
+        hmacKey,
       );
       container['${note.id}.vnc'] = data;
     }
@@ -82,8 +94,8 @@ class VNCExporter {
 
     final wrapperData = await VNCFormat.encryptNote(
       wrapperNote,
-      _keyManager.masterKey!,
-      _keyManager.hmacKey!,
+      masterKey,
+      hmacKey,
     );
 
     // Combine wrapper + zip
@@ -103,8 +115,6 @@ class VNCExporter {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final outputPath = path.join(outputDir, 'vaultnote_backup_$timestamp.vnc');
     
-    // Get all notes (need to inject repository - simplified here)
-    // This would be called from a use case with repository access
     throw UnimplementedError('Use exportMultipleNotes with note list');
   }
 }

@@ -104,7 +104,19 @@ class NoteCard extends StatelessWidget {
   }
 
   Color _hexToColor(String hex) {
-    return Color(int.parse(hex.substring(1), radix: 16) + 0xFF000000);
+    try {
+      if (hex.isEmpty || !hex.startsWith('#') || hex.length != 7) {
+        return const Color(0xFFFFFFFF);
+      }
+      return Color(int.parse(hex.substring(1), radix: 16) + 0xFF000000);
+    } catch (e) {
+      return const Color(0xFFFFFFFF);
+    }
+  }
+      return Color(int.parse(hex.substring(1), radix: 16) + 0xFF000000);
+    } catch (e) {
+      return const Color(0xFFFFFFFF);
+    }
   }
 
   Color _getLabelColor(String labelName) {

@@ -43,6 +43,13 @@ class LabelChip extends StatelessWidget {
   }
 
   Color _hexToColor(String hex) {
-    return Color(int.parse(hex.substring(1), radix: 16) + 0xFF000000);
+    try {
+      if (hex.isEmpty || !hex.startsWith('#') || hex.length != 7) {
+        return const Color(0xFF4285F4);
+      }
+      return Color(int.parse(hex.substring(1), radix: 16) + 0xFF000000);
+    } catch (e) {
+      return const Color(0xFF4285F4);
+    }
   }
 }

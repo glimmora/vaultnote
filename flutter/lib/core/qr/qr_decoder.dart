@@ -25,6 +25,9 @@ class QRImportSession extends Equatable {
 
   /// Add a chunk from scanned QR
   void addChunk(int index, Uint8List data) {
+    if (index < 0 || index >= total) {
+      return;
+    }
     chunks[index] = data;
 
     // Extract salt and IV from first chunk (index 0)
@@ -34,7 +37,7 @@ class QRImportSession extends Equatable {
     }
 
     // Extract HMAC from last chunk
-    if (index == total - 1) {
+    if (index == total - 1 && data.length >= 32) {
       _hmac = data.sublist(data.length - 32);
     }
   }
@@ -50,16 +53,26 @@ class QRImportSession extends Equatable {
     }
 
     // Combine all chunks
-    final combined = Uint8List.fromList([
-      for (var i = 0; i < total; i++) ...chunks[i]!,
-    ]);
+    final combinedList = <int>[];
+    for (var i = 0; i < total; i++) {
+      final chunk = chunks[i];
+      if (chunk == null) {
+        throw StateError('Missing chunk at index $i');
+      }
+      combinedList.addAll(chunk);
+    }
+    final combined = Uint8List.fromList(combinedList);
+
+    // Verify minimum size: 32 (salt) + 12 (iv) + 16 (min auth tag) + 32 (hmac) = 92
+    if (combined.length < 92) {
+      throw StateError('Combined data too small for valid QR payload');
+    }
 
     // Extract components
     final salt = combined.sublist(0, 32);
     final iv = combined.sublist(32, 44);
-    final hmacStart = 44 + (combined.length - 32 - 44);
-    final ciphertext = combined.sublist(44, combined.length - 32 - 16);
-    final authTag = combined.sublist(combined.length - 32 - 16, combined.length - 32);
+    final authTag = combined.sublist(combined.length - 48, combined.length - 32);
+    final ciphertext = combined.sublist(44, combined.length - 48);
     final storedHmac = combined.sublist(combined.length - 32);
 
     // Verify HMAC

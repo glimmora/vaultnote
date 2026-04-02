@@ -19,6 +19,8 @@ class _QRExportScreenState extends State<QRExportScreen> {
   bool _isPasswordVisible = false;
   bool _hasPassword = false;
   bool _isGenerating = false;
+  int _currentQrIndex = 0;
+  int _currentQrIndex = 0;
 
   @override
   void dispose() {
@@ -124,8 +126,11 @@ class _QRExportScreenState extends State<QRExportScreen> {
           }
 
           // Show QR code
-          final currentIndex = state.qrIndex;
+          final currentIndex = _currentQrIndex;
           final totalChunks = state.qrChunks.length;
+          if (currentIndex >= totalChunks) {
+            _currentQrIndex = totalChunks - 1;
+          }
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24),
@@ -145,7 +150,7 @@ class _QRExportScreenState extends State<QRExportScreen> {
                 ),
                 const SizedBox(height: 24),
                 QrImageView(
-                  data: state.qrChunks[currentIndex],
+                  data: state.qrChunks[currentIndex < state.qrChunks.length ? currentIndex : 0],
                   version: QrVersions.auto,
                   size: 280.0,
                   backgroundColor: Colors.white,
@@ -178,7 +183,7 @@ class _QRExportScreenState extends State<QRExportScreen> {
                         child: OutlinedButton.icon(
                           onPressed: () {
                             setState(() {
-                              // Navigate to previous QR
+                              _currentQrIndex = currentIndex - 1;
                             });
                           },
                           icon: const Icon(Icons.arrow_back),
@@ -191,7 +196,21 @@ class _QRExportScreenState extends State<QRExportScreen> {
                         child: FilledButton.icon(
                           onPressed: () {
                             setState(() {
-                              // Navigate to next QR
+                              _currentQrIndex = currentIndex + 1;
+                            });
+                          },
+                          icon: const Icon(Icons.arrow_forward),
+                          label: const Text('Next'),
+                        ),
+                      ),
+                      ),
+                    if (currentIndex > 0) const SizedBox(width: 16),
+                    if (currentIndex < totalChunks - 1)
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _currentQrIndex = currentIndex + 1;
                             });
                           },
                           icon: const Icon(Icons.arrow_forward),

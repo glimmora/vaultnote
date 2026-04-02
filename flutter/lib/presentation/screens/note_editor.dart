@@ -73,10 +73,12 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   Widget build(BuildContext context) {
     final isEditing = widget.note != null;
 
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
         await _saveNote();
-        return true;
+        if (mounted) Navigator.pop(context);
       },
       child: Scaffold(
         appBar: AppBar(
@@ -315,17 +317,33 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   }
 
   Color _hexToColor(String hex) {
-    return Color(int.parse(hex.substring(1), radix: 16) + 0xFF000000);
+    try {
+      if (hex.isEmpty || !hex.startsWith('#') || hex.length != 7) {
+        return const Color(0xFFFFFFFF);
+      }
+      return Color(int.parse(hex.substring(1), radix: 16) + 0xFF000000);
+    } catch (e) {
+      return const Color(0xFFFFFFFF);
+    }
+  }
+      return Color(int.parse(hex.substring(1), radix: 16) + 0xFF000000);
+    } catch (e) {
+      return const Color(0xFFFFFFFF);
+    }
   }
 
   Color _getLabelColor(String labelName) {
-    // Get color from label
-    final labelCubit = context.read<LabelCubit>();
-    final label = labelCubit.state.labels.firstWhere(
-          (l) => l.name == labelName,
-          orElse: () => const Label(id: '', name: ''),
-        );
-    return _hexToColor(label.color).withOpacity(0.3);
+    try {
+      final labelCubit = context.read<LabelCubit>();
+      final label = labelCubit.state.labels.firstWhere(
+            (l) => l.name == labelName,
+            orElse: () => const Label(id: '', name: '', color: '#4285F4'),
+          );
+      return _hexToColor(label.color).withOpacity(0.3);
+    } catch (e) {
+      return const Color(0xFF4285F4).withOpacity(0.3);
+    }
+  }
   }
 
   Future<void> _saveNote() async {

@@ -86,46 +86,55 @@ class VNCFormat {
 
   /// Decrypt and parse a note from .vnc format
   static Future<Note> decryptNote(Uint8List data, Uint8List key, Uint8List hmacKey) async {
-    if (data.length < headerSize + kdfParamsSize + saltSize + ivSize + authTagSize + hmacSize) {
-      throw Exception('Invalid .vnc file: too short');
-    }
-
-    // Verify magic
-    for (int i = 0; i < 4; i++) {
-      if (data[i] != magic[i]) {
-        throw Exception('Invalid .vnc file: bad magic');
+    try {
+      if (data.length < headerSize + kdfParamsSize + saltSize + ivSize + authTagSize + hmacSize) {
+        throw Exception('Invalid .vnc file: too short');
       }
+
+      // Verify magic
+      for (int i = 0; i < 4; i++) {
+        if (data[i] != magic[i]) {
+          throw Exception('Invalid .vnc file: bad magic');
+        }
+      }
+
+      // Extract HMAC (last 32 bytes)
+      final storedHmac = data.sublist(data.length - hmacSize);
+      final dataWithoutHmac = data.sublist(0, data.length - hmacSize);
+
+      // Verify HMAC
+      if (!HMACSHA256.verify(dataWithoutHmac, hmacKey, storedHmac)) {
+        throw Exception('Invalid .vnc file: HMAC verification failed - file may be tampered');
+      }
+
+      // Extract salt and IV
+      final salt = data.sublist(headerSize + kdfParamsSize, headerSize + kdfParamsSize + saltSize);
+      final iv = data.sublist(headerSize + kdfParamsSize + saltSize, headerSize + kdfParamsSize + saltSize + ivSize);
+
+      // Extract ciphertext and auth tag
+      final ciphertextStart = headerSize + kdfParamsSize + saltSize + ivSize;
+      final ciphertextEnd = data.length - hmacSize - authTagSize;
+      if (ciphertextEnd <= ciphertextStart) {
+        throw Exception('Invalid .vnc file: no ciphertext');
+      }
+      final ciphertext = data.sublist(ciphertextStart, ciphertextEnd);
+      final authTag = data.sublist(ciphertextEnd, data.length - hmacSize);
+
+      // Decrypt
+      final decrypted = AESGCM.decrypt(ciphertext, key, iv, authTag);
+
+      // Decompress
+      final decompressed = GZipDecoder().decodeBytes(decrypted);
+      final jsonString = utf8.decode(decompressed);
+
+      // Parse JSON
+      final json = jsonDecode(jsonString) as Map<String, dynamic>;
+      return Note.fromJson(json);
+    } on Exception {
+      rethrow;
+    } catch (e) {
+      throw Exception('Failed to decrypt note: $e');
     }
-
-    // Extract HMAC (last 32 bytes)
-    final storedHmac = data.sublist(data.length - hmacSize);
-    final dataWithoutHmac = data.sublist(0, data.length - hmacSize);
-
-    // Verify HMAC
-    if (!HMACSHA256.verify(dataWithoutHmac, hmacKey, storedHmac)) {
-      throw Exception('Invalid .vnc file: HMAC verification failed - file may be tampered');
-    }
-
-    // Extract salt and IV
-    final salt = data.sublist(headerSize + kdfParamsSize, headerSize + kdfParamsSize + saltSize);
-    final iv = data.sublist(headerSize + kdfParamsSize + saltSize, headerSize + kdfParamsSize + saltSize + ivSize);
-
-    // Extract ciphertext and auth tag
-    final ciphertextStart = headerSize + kdfParamsSize + saltSize + ivSize;
-    final ciphertextEnd = data.length - hmacSize - authTagSize;
-    final ciphertext = data.sublist(ciphertextStart, ciphertextEnd);
-    final authTag = data.sublist(ciphertextEnd, data.length - hmacSize);
-
-    // Decrypt
-    final decrypted = AESGCM.decrypt(ciphertext, key, iv, authTag);
-
-    // Decompress
-    final decompressed = GZipDecoder().decodeBytes(decrypted);
-    final jsonString = utf8.decode(decompressed);
-
-    // Parse JSON
-    final json = jsonDecode(jsonString) as Map<String, dynamic>;
-    return Note.fromJson(json);
   }
 
   /// Build file structure without HMAC

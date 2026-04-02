@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
@@ -7,7 +6,6 @@ import '../../core/crypto/argon2_kdf.dart';
 import '../../core/storage/secure_prefs.dart';
 import '../../core/qr/qr_encoder.dart';
 import '../../core/qr/qr_decoder.dart';
-import '../../core/export/vnc_exporter.dart';
 import '../../core/export/vnc_importer.dart';
 import '../../domain/entities/note.dart';
 
@@ -118,14 +116,12 @@ class CryptoState extends Equatable {
 class CryptoCubit extends Cubit<CryptoState> {
   final KeyManager _keyManager;
   final SecurePrefs _securePrefs;
-  final VNCExporter? _exporter;
   final VNCImporter? _importer;
   final Argon2KDF _kdf = Argon2KDF();
 
   CryptoCubit(
     this._keyManager,
     this._securePrefs,
-    this._exporter,
     this._importer,
   ) : super(const CryptoState());
 
@@ -156,7 +152,7 @@ class CryptoCubit extends Cubit<CryptoState> {
       await _securePrefs.setSalt(salt);
       
       // Create and store verification hash
-      _keyManager.unlock(password, salt, null);
+      await _keyManager.unlock(password, salt, null);
       final verifyHash = _keyManager.createVerifyHash();
       await _securePrefs.setVerifyHash(verifyHash);
       

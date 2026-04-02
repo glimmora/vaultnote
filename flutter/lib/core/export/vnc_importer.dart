@@ -17,10 +17,16 @@ class VNCImporter {
       throw StateError('KeyManager not unlocked');
     }
 
+    final masterKey = _keyManager.masterKey;
+    final hmacKey = _keyManager.hmacKey;
+    if (masterKey == null || hmacKey == null) {
+      throw StateError('Encryption keys not available');
+    }
+
     return await VNCFormat.decryptNote(
       data,
-      _keyManager.masterKey!,
-      _keyManager.hmacKey!,
+      masterKey,
+      hmacKey,
     );
   }
 
@@ -30,9 +36,12 @@ class VNCImporter {
       throw StateError('KeyManager not unlocked');
     }
 
-    // First, try to decrypt the wrapper
-    // Container format: [wrapper .vnc][zip data]
-    
+    final masterKey = _keyManager.masterKey;
+    final hmacKey = _keyManager.hmacKey;
+    if (masterKey == null || hmacKey == null) {
+      throw StateError('Encryption keys not available');
+    }
+
     // Find where the zip starts by looking for PK signature
     int zipStart = -1;
     for (int i = 0; i < data.length - 4; i++) {
@@ -47,8 +56,8 @@ class VNCImporter {
       // Not a container, treat as single note
       final note = await VNCFormat.decryptNote(
         data,
-        _keyManager.masterKey!,
-        _keyManager.hmacKey!,
+        masterKey,
+        hmacKey,
       );
       return [note];
     }
@@ -61,17 +70,19 @@ class VNCImporter {
     
     final notes = <Note>[];
     for (final file in archive.files) {
-      if (file.name.endsWith('.vnc') && file.content is Uint8List) {
-        try {
-          final note = await VNCFormat.decryptNote(
-            file.content as Uint8List,
-            _keyManager.masterKey!,
-            _keyManager.hmacKey!,
-          );
-          notes.add(note);
-        } catch (e) {
-          // Skip corrupted notes
-          print('Failed to import ${file.name}: $e');
+      if (file.name.endsWith('.vnc')) {
+        final content = file.content;
+        if (content is Uint8List) {
+          try {
+            final note = await VNCFormat.decryptNote(
+              content,
+              masterKey,
+              hmacKey,
+            );
+            notes.add(note);
+          } catch (e) {
+            // Skip corrupted notes
+          }
         }
       }
     }

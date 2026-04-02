@@ -158,7 +158,10 @@ class NoteCubit extends Cubit<NoteState> {
 
   Future<void> togglePin(String noteId) async {
     try {
-      final note = state.notes.firstWhere((n) => n.id == noteId);
+      final note = state.notes.firstWhere(
+        (n) => n.id == noteId,
+        orElse: () => throw Exception('Note not found: $noteId'),
+      );
       final updated = _togglePin.execute(note);
       await _noteRepository.updateNote(updated);
       await loadNotes();
@@ -169,7 +172,25 @@ class NoteCubit extends Cubit<NoteState> {
 
   Future<void> archiveNote(String noteId, bool archive) async {
     try {
-      final note = state.notes.firstWhere((n) => n.id == noteId);
+      final note = state.notes.firstWhere(
+        (n) => n.id == noteId,
+        orElse: () => throw Exception('Note not found: $noteId'),
+      );
+      final updated = _archiveNote.execute(note, archive);
+      await _noteRepository.updateNote(updated);
+      await loadNotes();
+    } catch (e) {
+      emit(state.copyWith(error: e.toString()));
+    }
+  }
+  }
+
+  Future<void> archiveNote(String noteId, bool archive) async {
+    try {
+      final note = state.notes.firstWhere(
+        (n) => n.id == noteId,
+        orElse: () => throw Exception('Note not found: $noteId'),
+      );
       final updated = _archiveNote.execute(note, archive);
       await _noteRepository.updateNote(updated);
       await loadNotes();

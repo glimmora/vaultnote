@@ -44,13 +44,20 @@ class LabelRepository {
       // Simple parsing: each line is "id|name|color"
       final lines = labelsData.split('\n').where((l) => l.trim().isNotEmpty);
       return lines.map((line) {
-        final parts = line.split('|');
-        return Label(
-          id: parts[0],
-          name: parts[1],
-          color: parts.length > 2 ? parts[2] : '#4285F4',
-        );
-      }).toList();
+        try {
+          final parts = line.split('|');
+          if (parts.length < 2) {
+            return null;
+          }
+          return Label(
+            id: parts[0],
+            name: parts[1],
+            color: parts.length > 2 ? parts[2] : '#4285F4',
+          );
+        } catch (e) {
+          return null;
+        }
+      }).whereType<Label>().toList();
     } catch (e) {
       return [];
     }

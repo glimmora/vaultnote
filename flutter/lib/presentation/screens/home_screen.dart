@@ -265,16 +265,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class NoteSearchDelegate extends SearchDelegate {
+class NoteSearchDelegate extends SearchDelegate<String?> {
   @override
   List<Widget> buildActions(BuildContext context) {
     return [
-      IconButton(
-        icon: const Icon(Icons.clear),
-        onPressed: () {
-          query = '';
-        },
-      ),
+      if (query.isNotEmpty)
+        IconButton(
+          icon: const Icon(Icons.clear),
+          onPressed: () {
+            query = '';
+          },
+        ),
     ];
   }
 
@@ -290,24 +291,78 @@ class NoteSearchDelegate extends SearchDelegate {
 
   @override
   Widget buildResults(BuildContext context) {
+    if (query.isEmpty) {
+      return const Center(child: Text('Enter a search term'));
+    }
     return BlocBuilder<NoteCubit, NoteState>(
       builder: (context, state) {
-        context.read<NoteCubit>().searchNotes(query);
-        return const SizedBox.shrink();
+        final results = state.notes.where((note) {
+          final q = query.toLowerCase();
+          return note.title.toLowerCase().contains(q) ||
+              note.body.toLowerCase().contains(q);
+        }).toList();
+
+        if (results.isEmpty) {
+          return const Center(child: Text('No results found'));
+        }
+
+        return ListView.builder(
+          itemCount: results.length,
+          itemBuilder: (context, index) {
+            final note = results[index];
+            return ListTile(
+              title: Text(note.title),
+              subtitle: Text(
+                note.body.length > 50
+                    ? '${note.body.substring(0, 50)}...'
+                    : note.body,
+              ),
+              onTap: () {
+                close(context, note.id);
+              },
+            );
+          },
+        );
       },
     );
   }
 
   @override
   Widget buildSuggestions(BuildContext context) {
+    if (query.isEmpty) {
+      return const Center(child: Text('Start typing to search notes'));
+    }
     return BlocBuilder<NoteCubit, NoteState>(
       builder: (context, state) {
-        if (query.isEmpty) {
-          return const Center(
-            child: Text('Start typing to search notes'),
-          );
+        final suggestions = state.notes.where((note) {
+          final q = query.toLowerCase();
+          return note.title.toLowerCase().contains(q) ||
+              note.body.toLowerCase().contains(q);
+        }).toList();
+
+        if (suggestions.isEmpty) {
+          return const Center(child: Text('No results found'));
         }
-        return const SizedBox.shrink();
+
+        return ListView.builder(
+          itemCount: suggestions.length,
+          itemBuilder: (context, index) {
+            final note = suggestions[index];
+            return ListTile(
+              leading: const Icon(Icons.search),
+              title: Text(note.title),
+              subtitle: Text(
+                note.body.length > 50
+                    ? '${note.body.substring(0, 50)}...'
+                    : note.body,
+              ),
+              onTap: () {
+                query = note.title;
+                showResults(context);
+              },
+            );
+          },
+        );
       },
     );
   }
@@ -342,7 +397,6 @@ class SettingsPreview extends StatelessWidget {
           title: const Text('Import from File'),
           trailing: const Icon(Icons.chevron_right),
           onTap: () {
-            // TODO: Implement file import
           },
         ),
         const Divider(height: 32),
@@ -354,7 +408,6 @@ class SettingsPreview extends StatelessWidget {
               subtitle: const Text('Use dark theme'),
               value: Theme.of(context).brightness == Brightness.dark,
               onChanged: (value) {
-                // TODO: Implement theme toggle
               },
             );
           },

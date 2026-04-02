@@ -30,18 +30,35 @@ class NoteRepository {
 
   /// Create a new note
   Future<void> createNote(Note note) async {
-    if (!_keyManager.isUnlocked) {
-      throw StateError('KeyManager not unlocked');
+    try {
+      if (!_keyManager.isUnlocked) {
+        throw StateError('KeyManager not unlocked');
+      }
+
+      final data = await VNCFormat.encryptNote(
+        note,
+        _keyManager.masterKey!,
+        _keyManager.hmacKey!,
+      );
+
+      final file = File(_getNotePath(note.id));
+      await file.writeAsBytes(data);
+    } catch (e) {
+      rethrow;
     }
+  }
 
-    final data = await VNCFormat.encryptNote(
-      note,
-      _keyManager.masterKey!,
-      _keyManager.hmacKey!,
-    );
+      final data = await VNCFormat.encryptNote(
+        note,
+        _keyManager.masterKey!,
+        _keyManager.hmacKey!,
+      );
 
-    final file = File(_getNotePath(note.id));
-    await file.writeAsBytes(data);
+      final file = File(_getNotePath(note.id));
+      await file.writeAsBytes(data);
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// Update an existing note
@@ -51,29 +68,57 @@ class NoteRepository {
 
   /// Delete a note
   Future<void> deleteNote(String noteId) async {
-    final file = File(_getNotePath(noteId));
-    if (await file.exists()) {
-      await file.delete();
+    try {
+      final file = File(_getNotePath(noteId));
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+    } catch (e) {
+      rethrow;
     }
   }
 
   /// Get a single note by ID
   Future<Note?> getNote(String noteId) async {
-    if (!_keyManager.isUnlocked) {
-      throw StateError('KeyManager not unlocked');
-    }
+    try {
+      if (!_keyManager.isUnlocked) {
+        throw StateError('KeyManager not unlocked');
+      }
 
-    final file = File(_getNotePath(noteId));
-    if (!await file.exists()) {
+      final file = File(_getNotePath(noteId));
+      if (!await file.exists()) {
+        return null;
+      }
+
+      final data = await file.readAsBytes();
+      return await VNCFormat.decryptNote(
+        data,
+        _keyManager.masterKey!,
+        _keyManager.hmacKey!,
+      );
+    } catch (e) {
       return null;
     }
+  }
 
-    final data = await file.readAsBytes();
-    return await VNCFormat.decryptNote(
-      data,
-      _keyManager.masterKey!,
-      _keyManager.hmacKey!,
-    );
+      final file = File(_getNotePath(noteId));
+      if (!await file.exists()) {
+        return null;
+      }
+
+      final data = await file.readAsBytes();
+      return await VNCFormat.decryptNote(
+        data,
+        _keyManager.masterKey!,
+        _keyManager.hmacKey!,
+      );
+    } catch (e) {
+      return null;
+    }
   }
 
   /// Get all notes (including archived)

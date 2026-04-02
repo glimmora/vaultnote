@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:qr_code_scanner_plus/qr_code_scanner_plus.dart';
 import '../../domain/entities/note.dart';
+import '../../core/utils/permission_manager.dart';
 import '../cubits/crypto_cubit.dart';
 import '../cubits/note_cubit.dart';
 
@@ -18,6 +19,108 @@ class _QRImportScreenState extends State<QRImportScreen> {
   bool _isPasswordVisible = false;
   final _passwordController = TextEditingController();
   bool _showPasswordDialog = false;
+  bool _cameraPermissionGranted = false;
+  bool _permissionChecked = false;
+  bool _cameraPermissionGranted = false;
+  bool _permissionChecked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkCameraPermission();
+  }
+
+  Future<void> _checkCameraPermission() async {
+    final granted = await PermissionManager.requestCamera();
+    if (mounted) {
+      setState(() {
+        _cameraPermissionGranted = granted;
+        _permissionChecked = true;
+      });
+      if (!granted) {
+        _showPermissionDeniedDialog();
+      }
+    }
+  }
+
+  void _showPermissionDeniedDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Camera Permission Required'),
+        content: const Text(
+          'This app needs camera access to scan QR codes. '
+          'Please grant camera permission in app settings.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context);
+            },
+            child: const Text('Go Back'),
+          ),
+          FilledButton(
+            onPressed: () {
+              PermissionManager.openSettings();
+              Navigator.pop(context);
+            },
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _checkCameraPermission();
+  }
+
+  Future<void> _checkCameraPermission() async {
+    final granted = await PermissionManager.requestCamera();
+    if (mounted) {
+      setState(() {
+        _cameraPermissionGranted = granted;
+        _permissionChecked = true;
+      });
+      if (!granted) {
+        _showPermissionDeniedDialog();
+      }
+    }
+  }
+
+  void _showPermissionDeniedDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Camera Permission Required'),
+        content: const Text(
+          'This app needs camera access to scan QR codes. '
+          'Please grant camera permission in app settings.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context);
+            },
+            child: const Text('Go Back'),
+          ),
+          FilledButton(
+            onPressed: () {
+              PermissionManager.openSettings();
+              Navigator.pop(context);
+            },
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   void reassemble() {
@@ -47,7 +150,33 @@ class _QRImportScreenState extends State<QRImportScreen> {
           ),
         ],
       ),
-      body: BlocConsumer<CryptoCubit, CryptoState>(
+      body: _permissionChecked && !_cameraPermissionGranted
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.camera_alt,
+                    size: 64,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Camera permission is required',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      PermissionManager.openSettings();
+                    },
+                    icon: const Icon(Icons.settings),
+                    label: const Text('Open Settings'),
+                  ),
+                ],
+              ),
+            )
+          : BlocConsumer<CryptoCubit, CryptoState>(
         listener: (context, state) {
           if (state.importedNote != null) {
             _showImportSuccess(state.importedNote!);
@@ -267,15 +396,19 @@ class _QRImportScreenState extends State<QRImportScreen> {
   }
 
   void _showImportSuccess(Object? note) {
+    if (!mounted) return;
+    final importedNote = note is Note ? note : null;
+    if (importedNote == null) return;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Import Successful'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Note "${(note as Note).title}" has been imported successfully!'),
+            Text('Note "${importedNote.title}" has been imported successfully!'),
             const SizedBox(height: 16),
             Text(
               'You can now find it in your notes list.',
@@ -286,8 +419,8 @@ class _QRImportScreenState extends State<QRImportScreen> {
         actions: [
           TextButton(
             onPressed: () {
+              Navigator.pop(dialogContext);
               Navigator.pop(context);
-              Navigator.pop(context); // Go back to home
               context.read<NoteCubit>().loadNotes();
             },
             child: const Text('Done'),
