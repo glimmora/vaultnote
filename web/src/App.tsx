@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useCryptoStore } from './store/cryptoStore'
 import UnlockScreen from './presentation/screens/UnlockScreen'
+import SetupScreen from './presentation/screens/SetupScreen'
 import HomeScreen from './presentation/screens/HomeScreen'
 import NoteEditorScreen from './presentation/screens/NoteEditorScreen'
 import LabelScreen from './presentation/screens/LabelScreen'
@@ -49,6 +50,10 @@ function App() {
         <Route
           path="/"
           element={isUnlocked ? <HomeScreen /> : <UnlockScreen />}
+        />
+        <Route
+          path="/setup"
+          element={<SetupScreen />}
         />
         <Route
           path="/note/new"

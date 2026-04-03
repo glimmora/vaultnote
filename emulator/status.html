@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VaultNote Emulator Status</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .status-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .status-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .status-item .value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .status-item .label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .success { color: #28a745; }
+        .warning { color: #ffc107; }
+        .error { color: #dc3545; }
+        
+        .terminal {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        
+        .terminal-line {
+            margin-bottom: 5px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .instructions {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 20px;
+        }
+        
+        .instructions h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ol {
+            margin-left: 20px;
+            color: #333;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        
+        .code {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        
+        .apk-info {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .apk-info h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 VaultNote Emulator</h1>
+            <p>Secure notes with encrypted image export</p>
+        </div>
+        
+        <div class="status-card">
+            <h2>📊 System Status</h2>
+            <div class="status-grid">
+                <div class="status-item">
+                    <div class="value success">✅</div>
+                    <div class="label">Emulator Running</div>
+                </div>
+                <div class="status-item">
+                    <div class="value success">✅</div>
+                    <div class="label">ADB Connected</div>
+                </div>
+                <div class="status-item">
+                    <div class="value warning">⏳</div>
+                    <div class="label">APK Installation</div>
+                </div>
+                <div class="status-item">
+                    <div class="value">8090</div>
+                    <div class="label">Web Server Port</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status-card">
+            <h2>📱 Emulator Information</h2>
+            <div class="terminal">
+                <div class="terminal-line">$ adb devices -l</div>
+                <div class="terminal-line">List of devices attached</div>
+                <div class="terminal-line">emulator-5554          device product:sdk_phone64_x86_64 model:Android_SDK_built_for_x86_64 device:emu64x transport_id:1</div>
+                <br>
+                <div class="terminal-line">$ adb shell getprop sys.boot_completed</div>
+                <div class="terminal-line">1</div>
+                <br>
+                <div class="terminal-line">$ adb shell pm list packages | head -5</div>
+                <div class="terminal-line">package:com.android.systemui.auto_generated_rro_vendor__</div>
+                <div class="terminal-line">package:com.android.providers.media.module</div>
+                <div class="terminal-line">package:com.android.modulemetadata</div>
+            </div>
+        </div>
+        
+        <div class="status-card">
+            <h2>📦 APK Information</h2>
+            <div class="apk-info">
+                <h4>VaultNote APK Details</h4>
+                <p><strong>Location:</strong> <code>/home/blue/projects/vaultnote/flutter/build/app/outputs/apk/release/app-universal-release.apk</code></p>
+                <p><strong>Size:</strong> 51 MB</p>
+                <p><strong>Package:</strong> com.vaultnote.vaultnote</p>
+                <p><strong>Version:</strong> 1.0.0</p>
+                <p><strong>Min SDK:</strong> 21 (Android 5.0)</p>
+                <p><strong>Target SDK:</strong> 34 (Android 14)</p>
+            </div>
+            
+            <div class="terminal">
+                <div class="terminal-line">$ ls -lh /home/blue/projects/vaultnote/flutter/build/app/outputs/apk/release/</div>
+                <div class="terminal-line">total 105M</div>
+                <div class="terminal-line">-rw-r--r-- 1 blue blue 19M Apr  3 01:45 app-arm64-v8a-release.apk</div>
+                <div class="terminal-line">-rw-r--r-- 1 blue blue 17M Apr  3 01:45 app-armeabi-v7a-release.apk</div>
+                <div class="terminal-line">-rw-r--r-- 1 blue blue 51M Apr  3 01:45 app-universal-release.apk</div>
+                <div class="terminal-line">-rw-r--r-- 1 blue blue 20M Apr  3 01:45 app-x86_64-release.apk</div>
+            </div>
+        </div>
+        
+        <div class="status-card">
+            <h2>🎮 How to Access VaultNote</h2>
+            <div class="instructions">
+                <h3>Option 1: Using scrcpy (Recommended)</h3>
+                <ol>
+                    <li>Open a new terminal</li>
+                    <li>Run: <code>scrcpy -s emulator-5554</code></li>
+                    <li>This will open a window showing the emulator screen</li>
+                    <li>You can interact with the emulator using your mouse and keyboard</li>
+                </ol>
+                
+                <h3>Option 2: Using Android Studio</h3>
+                <ol>
+                    <li>Open Android Studio</li>
+                    <li>Go to Tools → Device Manager</li>
+                    <li>You should see "Android_SDK_built_for_x86_64" running</li>
+                    <li>Click on it to open the emulator window</li>
+                </ol>
+                
+                <h3>Option 3: Manual APK Installation</h3>
+                <ol>
+                    <li>Wait for emulator to fully boot (may take 2-3 minutes)</li>
+                    <li>Run: <code>adb install -r /home/blue/projects/vaultnote/flutter/build/app/outputs/apk/release/app-universal-release.apk</code></li>
+                    <li>Once installed, find VaultNote in the app drawer</li>
+                </ol>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="http://localhost:8090/" class="btn">🌐 Open Web Control Panel</a>
+                <button class="btn" onclick="location.reload()">🔄 Refresh Status</button>
+            </div>
+        </div>
+        
+        <div class="status-card">
+            <h2>🔧 Troubleshooting</h2>
+            <div class="terminal">
+                <div class="terminal-line"># Check if emulator is running</div>
+                <div class="terminal-line">ps aux | grep emulator | grep -v grep</div>
+                <br>
+                <div class="terminal-line"># Check emulator logs</div>
+                <div class="terminal-line">tail -f /home/blue/projects/vaultnote/emulator/emulator_final.log</div>
+                <br>
+                <div class="terminal-line"># Restart emulator if needed</div>
+                <div class="terminal-line">adb emu kill</div>
+                <div class="terminal-line">nohup /home/blue/sdk/android/emulator/emulator -avd vaultnote_default -no-audio -no-window -no-accel -gpu swiftshader_indirect -port 5554 &</div>
+                <br>
+                <div class="terminal-line"># Force install APK</div>
+                <div class="terminal-line">adb push /home/blue/projects/vaultnote/flutter/build/app/outputs/apk/release/app-universal-release.apk /data/local/tmp/vaultnote.apk</div>
+                <div class="terminal-line">adb shell pm install /data/local/tmp/vaultnote.apk</div>
+            </div>
+        </div>
+        
+        <div class="status-card">
+            <h2>📝 Notes</h2>
+            <ul>
+                <li>Emulator is running in <strong>software rendering mode</strong> (no hardware acceleration)</li>
+                <li>Cold boot takes 2-3 minutes on first run</li>
+                <li>APK installation may fail due to storage manager issues in software mode</li>
+                <li>Use <code>scrcpy</code> for best visual access to the emulator</li>
+                <li>Web control panel is available at <a href="http://localhost:8090/">http://localhost:8090/</a></li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        // Auto-refresh every 30 seconds
+        setTimeout(() => location.reload(), 30000);
+    </script>
+</body>
+</html>

@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useCryptoStore } from '../../store/cryptoStore'
+import { useNoteStore } from '../../store/noteStore'
 import QRCode from 'qrcode'
 
 export default function QRExportScreen() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const { exportToQR, qrChunks, qrIndex, error, resetQRImport } = useCryptoStore()
+  const { notes, loadNotes } = useNoteStore()
 
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -14,7 +16,13 @@ export default function QRExportScreen() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [qrImageData, setQrImageData] = useState<string>('')
 
-  const note = { id, title: 'Note' } // In real app, fetch from store
+  // Fetch real note from store
+  const note = notes.find((n) => n.id === id) || { id, title: 'Note Not Found', body: '', labels: [], color: '#FFFFFF', pinned: false, archived: false, created: '', modified: '' }
+
+  // Load notes on mount
+  useEffect(() => {
+    loadNotes()
+  }, [loadNotes])
 
   useEffect(() => {
     if (qrChunks.length > 0 && hasPassword) {
@@ -55,6 +63,49 @@ export default function QRExportScreen() {
     setHasPassword(false)
     setPassword('')
     setQrImageData('')
+  }
+
+  const handlePrevious = () => {
+    // QR chunks are 0-indexed, qrIndex is 1-indexed
+    const prevIndex = qrIndex - 2
+    if (prevIndex >= 0 && prevIndex < qrChunks.length) {
+      generateQRImage(qrChunks[prevIndex])
+      useCryptoStore.setState({ qrIndex: prevIndex + 1 })
+    }
+  }
+
+  const handleNext = () => {
+    // QR chunks are 0-indexed, qrIndex is 1-indexed
+    const nextIndex = qrIndex
+    if (nextIndex >= 0 && nextIndex < qrChunks.length) {
+      generateQRImage(qrChunks[nextIndex])
+      useCryptoStore.setState({ qrIndex: nextIndex + 1 })
+    }
+  }
+
+  const handleShare = async () => {
+    try {
+      if (navigator.share && qrImageData) {
+        // Convert data URL to blob for sharing
+        const response = await fetch(qrImageData)
+        const blob = await response.blob()
+        const file = new File([blob], `${note.title}_qr.png`, { type: 'image/png' })
+        
+        await navigator.share({
+          title: `VaultNote: ${note.title}`,
+          text: 'Encrypted note QR code',
+          files: [file]
+        })
+      } else {
+        // Fallback: download the QR image
+        const link = document.createElement('a')
+        link.href = qrImageData
+        link.download = `${note.title}_qr.png`
+        link.click()
+      }
+    } catch (error) {
+      console.error('Share failed:', error)
+    }
   }
 
   return (
@@ -176,7 +227,7 @@ export default function QRExportScreen() {
             <div className="flex gap-3">
               {qrIndex > 1 && (
                 <button
-                  onClick={() => {}}
+                  onClick={handlePrevious}
                   className="flex-1 py-2 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   Previous
@@ -184,14 +235,14 @@ export default function QRExportScreen() {
               )}
               {qrIndex < qrChunks.length ? (
                 <button
-                  onClick={() => {}}
+                  onClick={handleNext}
                   className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
                 >
                   Next
                 </button>
               ) : (
                 <button
-                  onClick={() => {}}
+                  onClick={handleShare}
                   className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
                 >
                   Share

@@ -9,10 +9,25 @@ class Argon2KDF {
   static const int timeCost = 3;
   static const int parallelism = 4;
   static const int derivedKeyLength = 32; // 256 bits
+  static const int minSaltLength = 16;
+  static const int maxPasswordLength = 1024;
 
   /// Derive a 256-bit key from password and salt
   Future<Uint8List> deriveKey(String password, Uint8List salt) async {
     try {
+      if (password.isEmpty) {
+        throw ArgumentError('Password cannot be empty');
+      }
+      if (password.length > maxPasswordLength) {
+        throw ArgumentError('Password too long (max $maxPasswordLength chars)');
+      }
+      if (salt.isEmpty) {
+        throw ArgumentError('Salt cannot be empty');
+      }
+      if (salt.length < minSaltLength) {
+        throw ArgumentError('Salt must be at least $minSaltLength bytes, got ${salt.length}');
+      }
+
       final params = Argon2Parameters(
         Argon2Parameters.ARGON2_id,
         salt,
@@ -20,14 +35,14 @@ class Argon2KDF {
         memory: memoryCost,
         lanes: parallelism,
       );
-      
+
       final generator = Argon2BytesGenerator();
       generator.init(params);
-      
+
       final passwordBytes = Uint8List.fromList(password.codeUnits);
       final result = Uint8List(derivedKeyLength);
       generator.generateBytes(passwordBytes, result, 0, derivedKeyLength);
-      
+
       return result;
     } catch (e) {
       throw Exception('Key derivation failed: $e');
@@ -41,6 +56,9 @@ class Argon2KDF {
 
   /// Verify a password against a stored hash
   Future<bool> verify(String password, Uint8List hash, Uint8List salt) async {
+    if (password.isEmpty || hash.isEmpty || salt.isEmpty) {
+      return false;
+    }
     final derivedKey = await deriveKey(password, salt);
     return _constantTimeCompare(derivedKey, hash);
   }

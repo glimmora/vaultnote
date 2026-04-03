@@ -9,19 +9,36 @@ class HMACSHA256 {
 
   /// Compute HMAC-SHA256 of data
   static Uint8List compute(Uint8List data, Uint8List key) {
+    if (data.isEmpty) {
+      throw ArgumentError('Data cannot be empty');
+    }
+    if (key.isEmpty) {
+      throw ArgumentError('Key cannot be empty');
+    }
     if (key.length != keyLength) {
-      throw ArgumentError('Key must be 32 bytes (256 bits)');
+      throw ArgumentError('Key must be 32 bytes (256 bits), got ${key.length}');
     }
 
-    final hmac = Hmac(sha256, key);
-    final digest = hmac.convert(data);
-    return Uint8List.fromList(digest.bytes);
+    try {
+      final hmac = Hmac(sha256, key);
+      final digest = hmac.convert(data);
+      return Uint8List.fromList(digest.bytes);
+    } catch (e) {
+      throw Exception('HMAC computation failed: $e');
+    }
   }
 
   /// Verify HMAC-SHA256
   static bool verify(Uint8List data, Uint8List key, Uint8List expectedHmac) {
-    final computedHmac = compute(data, key);
-    return _constantTimeCompare(computedHmac, expectedHmac);
+    if (data.isEmpty || key.isEmpty || expectedHmac.isEmpty) {
+      return false;
+    }
+    try {
+      final computedHmac = compute(data, key);
+      return _constantTimeCompare(computedHmac, expectedHmac);
+    } catch (e) {
+      return false;
+    }
   }
 
   /// Constant-time comparison to prevent timing attacks
