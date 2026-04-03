@@ -189,9 +189,9 @@
     },
     {
       "name": "file_picker",
-      "rootUri": "file:///home/blue/.pub-cache/hosted/pub.dev/file_picker-8.3.2",
+      "rootUri": "file:///home/blue/.pub-cache/hosted/pub.dev/file_picker-6.2.1",
       "packageUri": "lib/",
-      "languageVersion": "3.4"
+      "languageVersion": "2.19"
     },
     {
       "name": "fixnum",
@@ -291,7 +291,7 @@
     },
     {
       "name": "google_fonts",
-      "rootUri": "file:///home/blue/.pub-cache/hosted/pub.dev/google_fonts-6.3.0",
+      "rootUri": "file:///home/blue/.pub-cache/hosted/pub.dev/google_fonts-5.1.0",
       "packageUri": "lib/",
       "languageVersion": "2.14"
     },
@@ -327,9 +327,9 @@
     },
     {
       "name": "intl",
-      "rootUri": "file:///home/blue/.pub-cache/hosted/pub.dev/intl-0.19.0",
+      "rootUri": "file:///home/blue/.pub-cache/hosted/pub.dev/intl-0.18.1",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "2.12"
     },
     {
       "name": "io",
@@ -591,13 +591,13 @@
     },
     {
       "name": "share_plus",
-      "rootUri": "file:///home/blue/.pub-cache/hosted/pub.dev/share_plus-10.1.4",
+      "rootUri": "file:///home/blue/.pub-cache/hosted/pub.dev/share_plus-7.2.2",
       "packageUri": "lib/",
-      "languageVersion": "3.4"
+      "languageVersion": "2.18"
     },
     {
       "name": "share_plus_platform_interface",
-      "rootUri": "file:///home/blue/.pub-cache/hosted/pub.dev/share_plus_platform_interface-5.0.2",
+      "rootUri": "file:///home/blue/.pub-cache/hosted/pub.dev/share_plus_platform_interface-3.4.0",
       "packageUri": "lib/",
       "languageVersion": "2.18"
     },
@@ -764,7 +764,7 @@
       "languageVersion": "3.0"
     }
   ],
-  "generated": "2026-04-03T01:30:59.018256Z",
+  "generated": "2026-04-03T01:50:23.702164Z",
   "generator": "pub",
   "generatorVersion": "3.4.0",
   "flutterRoot": "file:///home/dev/vscode-projects/blue/projects/flutter",

@@ -75,7 +75,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
 
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, result) async {
+      onPopInvoked: (didPop) async {
         if (didPop) return;
         await _saveNote();
         if (mounted) Navigator.pop(context);
