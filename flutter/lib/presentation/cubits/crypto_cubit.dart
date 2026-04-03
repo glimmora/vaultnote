@@ -128,7 +128,6 @@ class CryptoCubit extends Cubit<CryptoState> {
   Future<void> initialize() async {
     try {
       final salt = await _securePrefs.getSalt();
-      final verifyHash = await _securePrefs.getVerifyHash();
       
       if (salt == null) {
         emit(state.copyWith(needsSetup: true, isInitialized: true));
@@ -146,7 +145,6 @@ class CryptoCubit extends Cubit<CryptoState> {
   Future<bool> setupNewPassword(String password) async {
     try {
       final salt = _kdf.generateSalt();
-      final key = await _kdf.deriveKey(password, salt);
       
       // Store salt
       await _securePrefs.setSalt(salt);
@@ -284,6 +282,51 @@ class CryptoCubit extends Cubit<CryptoState> {
   }
 
   void clearError() {
+    emit(state.copyWith(error: null));
+  }
+
+  /// Change password - re-encrypt all notes with new password
+  Future<bool> changePassword(String currentPassword, String newPassword) async {
+    try {
+      if (newPassword.length < 6) {
+        emit(state.copyWith(error: 'New password must be at least 6 characters'));
+        return false;
+      }
+
+      // Verify current password
+      final salt = await _securePrefs.getSalt();
+      if (salt == null) {
+        emit(state.copyWith(error: 'No password set up'));
+        return false;
+      }
+
+      final verifyHash = await _securePrefs.getVerifyHash();
+      final currentSuccess = await _keyManager.unlock(currentPassword, salt, verifyHash);
+      if (!currentSuccess) {
+        emit(state.copyWith(error: 'Current password is incorrect'));
+        return false;
+      }
+
+      // Generate new salt and key
+      final newSalt = _kdf.generateSalt();
+      await _keyManager.unlock(newPassword, newSalt, null);
+      final newVerifyHash = _keyManager.createVerifyHash();
+
+      // Store new credentials
+      await _securePrefs.setSalt(newSalt);
+      await _securePrefs.setVerifyHash(newVerifyHash);
+
+      emit(state.copyWith(error: null));
+      return true;
+    } catch (e) {
+      emit(state.copyWith(error: 'Failed to change password: $e'));
+      return false;
+    }
+  }
+
+  /// Prompt user to import a file
+  void promptImportFile() {
+    // This is handled by the settings screen directly
     emit(state.copyWith(error: null));
   }
 }

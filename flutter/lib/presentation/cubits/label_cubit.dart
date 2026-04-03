@@ -64,7 +64,6 @@ class LabelCubit extends Cubit<LabelState> {
   final LabelRepository _labelRepository;
   final NoteRepository _noteRepository;
   final CreateLabelUseCase _createLabel = CreateLabelUseCase();
-  final UpdateLabelUseCase _updateLabel = UpdateLabelUseCase();
 
   LabelCubit(this._labelRepository, this._noteRepository) : super(const LabelState());
 

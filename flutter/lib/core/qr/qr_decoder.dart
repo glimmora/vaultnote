@@ -8,6 +8,7 @@ import '../crypto/hmac_sha256.dart';
 import '../../domain/entities/note.dart';
 
 /// QR Code decoder session - assembles chunks and decrypts
+// ignore: must_be_immutable
 class QRImportSession extends Equatable {
   final int total;
   final Map<int, Uint8List> chunks = {};

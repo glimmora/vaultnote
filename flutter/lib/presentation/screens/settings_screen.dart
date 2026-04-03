@@ -1,11 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 import '../cubits/crypto_cubit.dart';
 import '../cubits/note_cubit.dart';
+import '../../core/storage/secure_prefs.dart';
+import '../../core/crypto/key_manager.dart';
+import '../../core/export/vnc_exporter.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  int _autoLockMinutes = 5;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final securePrefs = context.read<SecurePrefs>();
+    final autoLockMinutes = await securePrefs.getAutoLockMinutes();
+    setState(() {
+      _autoLockMinutes = autoLockMinutes;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +135,10 @@ class SettingsScreen extends StatelessWidget {
                   value: Theme.of(context).brightness == Brightness.dark,
                   onChanged: (value) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Theme toggle coming soon')),
+                      const SnackBar(
+                        content: Text('Theme follows system setting'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
                     );
                   },
                 ),
@@ -247,9 +276,47 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _exportAllNotes(BuildContext context) async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Export all notes coming soon')),
-    );
+    try {
+      final notes = await context.read<NoteCubit>().state.notes;
+      if (notes.isEmpty) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No notes to export'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+
+      final exporter = context.read<VNCExporter>();
+      final appDir = await getApplicationDocumentsDirectory();
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final outputPath = path.join(appDir.path, 'vaultnote_backup_$timestamp.vnc');
+
+      final file = await exporter.exportMultipleNotes(notes, outputPath);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Exported ${notes.length} notes to ${file.path}'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Export failed: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   void _showAutoLockDialog(BuildContext context) {
@@ -262,19 +329,35 @@ class SettingsScreen extends StatelessWidget {
           children: [
             ListTile(
               title: const Text('1 minute'),
-              onTap: () => Navigator.pop(context),
+              trailing: _autoLockMinutes == 1 ? const Icon(Icons.check, color: Colors.indigo) : null,
+              onTap: () async {
+                await _saveAutoLockMinutes(1);
+                if (context.mounted) Navigator.pop(context);
+              },
             ),
             ListTile(
               title: const Text('5 minutes'),
-              onTap: () => Navigator.pop(context),
+              trailing: _autoLockMinutes == 5 ? const Icon(Icons.check, color: Colors.indigo) : null,
+              onTap: () async {
+                await _saveAutoLockMinutes(5);
+                if (context.mounted) Navigator.pop(context);
+              },
             ),
             ListTile(
               title: const Text('10 minutes'),
-              onTap: () => Navigator.pop(context),
+              trailing: _autoLockMinutes == 10 ? const Icon(Icons.check, color: Colors.indigo) : null,
+              onTap: () async {
+                await _saveAutoLockMinutes(10);
+                if (context.mounted) Navigator.pop(context);
+              },
             ),
             ListTile(
               title: const Text('Never'),
-              onTap: () => Navigator.pop(context),
+              trailing: _autoLockMinutes == 0 ? const Icon(Icons.check, color: Colors.indigo) : null,
+              onTap: () async {
+                await _saveAutoLockMinutes(0);
+                if (context.mounted) Navigator.pop(context);
+              },
             ),
           ],
         ),
@@ -288,9 +371,163 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _saveAutoLockMinutes(int minutes) async {
+    final securePrefs = context.read<SecurePrefs>();
+    final keyManager = context.read<KeyManager>();
+    await securePrefs.setAutoLockMinutes(minutes);
+    keyManager.setAutoLockTimeout(minutes * 60 * 1000);
+    setState(() {
+      _autoLockMinutes = minutes;
+    });
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Auto-lock set to ${minutes == 0 ? 'Never' : '$minutes minute(s)'}'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   void _changePassword(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Change password coming soon')),
+    showDialog(
+      context: context,
+      builder: (context) => _ChangePasswordDialog(),
+    );
+  }
+}
+
+class _ChangePasswordDialog extends StatefulWidget {
+  @override
+  State<_ChangePasswordDialog> createState() => _ChangePasswordDialogState();
+}
+
+class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
+  final _currentController = TextEditingController();
+  final _newController = TextEditingController();
+  final _confirmController = TextEditingController();
+  bool _loading = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _currentController.dispose();
+    _newController.dispose();
+    _confirmController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _changePassword() async {
+    if (_currentController.text.isEmpty || _newController.text.isEmpty || _confirmController.text.isEmpty) {
+      setState(() => _error = 'All fields are required');
+      return;
+    }
+    if (_newController.text != _confirmController.text) {
+      setState(() => _error = 'New passwords do not match');
+      return;
+    }
+    if (_newController.text.length < 6) {
+      setState(() => _error = 'Password must be at least 6 characters');
+      return;
+    }
+
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final cryptoCubit = context.read<CryptoCubit>();
+      final success = await cryptoCubit.changePassword(_currentController.text, _newController.text);
+
+      if (mounted) {
+        if (success) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Password changed successfully'),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        } else {
+          setState(() {
+            _error = 'Current password is incorrect';
+            _loading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to change password: $e';
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Change Password'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  _error!,
+                  style: const TextStyle(color: Colors.red, fontSize: 13),
+                ),
+              ),
+            TextField(
+              controller: _currentController,
+              decoration: const InputDecoration(
+                labelText: 'Current Password',
+                border: OutlineInputBorder(),
+              ),
+              obscureText: true,
+              enabled: !_loading,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _newController,
+              decoration: const InputDecoration(
+                labelText: 'New Password',
+                border: OutlineInputBorder(),
+              ),
+              obscureText: true,
+              enabled: !_loading,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _confirmController,
+              decoration: const InputDecoration(
+                labelText: 'Confirm New Password',
+                border: OutlineInputBorder(),
+              ),
+              obscureText: true,
+              enabled: !_loading,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _loading ? null : () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _loading ? null : _changePassword,
+          child: _loading
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Text('Change'),
+        ),
+      ],
     );
   }
 }

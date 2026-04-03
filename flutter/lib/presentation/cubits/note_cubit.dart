@@ -3,7 +3,6 @@ import 'package:equatable/equatable.dart';
 import '../../core/storage/note_repository.dart';
 import '../../core/storage/label_repository.dart';
 import '../../domain/entities/note.dart';
-import '../../domain/entities/label.dart';
 import '../../domain/usecases/note_usecases.dart';
 
 // Events
@@ -101,15 +100,12 @@ class NoteState extends Equatable {
 // Cubit
 class NoteCubit extends Cubit<NoteState> {
   final NoteRepository _noteRepository;
-  final LabelRepository _labelRepository;
-  final CreateNoteUseCase _createNote = CreateNoteUseCase();
-  final UpdateNoteUseCase _updateNote = UpdateNoteUseCase();
   final ArchiveNoteUseCase _archiveNote = ArchiveNoteUseCase();
   final TogglePinUseCase _togglePin = TogglePinUseCase();
 
   NoteCubit(
     this._noteRepository,
-    this._labelRepository,
+    LabelRepository _,
   ) : super(const NoteState());
 
   Future<void> loadNotes() async {

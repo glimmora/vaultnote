@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:archive/archive.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import '../crypto/key_manager.dart';
 import '../storage/vnc_format.dart';
@@ -111,10 +110,6 @@ class VNCExporter {
 
   /// Export all notes
   Future<File> exportAllNotes(String outputDir) async {
-    final appDir = await getApplicationDocumentsDirectory();
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final outputPath = path.join(outputDir, 'vaultnote_backup_$timestamp.vnc');
-    
-    throw UnimplementedError('Use exportMultipleNotes with note list');
+    throw UnimplementedError('Use exportMultipleNotes with note list instead');
   }
 }

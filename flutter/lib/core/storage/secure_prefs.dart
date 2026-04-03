@@ -16,6 +16,7 @@ class SecurePrefs {
   static const String _pinKey = 'vnc_pin_hash';
   static const String _biometricEnabledKey = 'vnc_biometric_enabled';
   static const String _autoLockMinutesKey = 'vnc_autolock_minutes';
+  static const String _themeModeKey = 'vnc_theme_mode';
 
   /// Store the KDF salt
   Future<void> setSalt(Uint8List salt) async {
@@ -73,6 +74,17 @@ class SecurePrefs {
   /// Set auto-lock timeout
   Future<void> setAutoLockMinutes(int minutes) async {
     await _storage.write(key: _autoLockMinutesKey, value: minutes.toString());
+  }
+
+  /// Get theme mode (0=system, 1=light, 2=dark)
+  Future<int> getThemeMode() async {
+    final value = await _storage.read(key: _themeModeKey);
+    return int.tryParse(value ?? '0') ?? 0;
+  }
+
+  /// Set theme mode
+  Future<void> setThemeMode(int mode) async {
+    await _storage.write(key: _themeModeKey, value: mode.toString());
   }
 
   /// Clear all secure data

@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
-import 'dart:convert';
 
 /// HMAC-SHA256 for integrity verification
 class HMACSHA256 {

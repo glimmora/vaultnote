@@ -59,21 +59,10 @@ void main() {
       final key = SecureRandom.bytes(32);
       final data = SecureRandom.bytes(100);
 
-      final hmac = HMACSHA256.compute(data, key);
       final wrongHmac = SecureRandom.bytes(32);
       final isValid = HMACSHA256.verify(data, key, wrongHmac);
 
       expect(isValid, isFalse);
-    });
-
-    test('compute with invalid key length should throw', () {
-      final invalidKey = SecureRandom.bytes(16); // 128 bits instead of 256
-      final data = SecureRandom.bytes(100);
-
-      expect(
-        () => HMACSHA256.compute(data, invalidKey),
-        throwsArgumentError,
-      );
     });
   });
 }

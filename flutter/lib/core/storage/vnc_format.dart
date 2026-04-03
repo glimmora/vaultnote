@@ -108,7 +108,6 @@ class VNCFormat {
       }
 
       // Extract salt and IV
-      final salt = data.sublist(headerSize + kdfParamsSize, headerSize + kdfParamsSize + saltSize);
       final iv = data.sublist(headerSize + kdfParamsSize + saltSize, headerSize + kdfParamsSize + saltSize + ivSize);
 
       // Extract ciphertext and auth tag

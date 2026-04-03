@@ -89,6 +89,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
               onPressed: () {
                 setState(() {
                   _isPinned = !_isPinned;
+                  _hasChanges = true;
                 });
               },
             ),
@@ -142,6 +143,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                             onDeleted: () {
                               setState(() {
                                 _selectedLabels.remove(label);
+                                _hasChanges = true;
                               });
                             },
                           );
@@ -200,6 +202,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                   onTap: () {
                     setState(() {
                       _selectedColor = color;
+                      _hasChanges = true;
                     });
                     Navigator.pop(context);
                   },
@@ -261,6 +264,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
                             } else {
                               _selectedLabels.remove(label.name);
                             }
+                            _hasChanges = true;
                           });
                         },
                       );

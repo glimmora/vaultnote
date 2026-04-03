@@ -59,13 +59,13 @@ class VaultNoteApp extends StatelessWidget {
             centerTitle: false,
             elevation: 0,
           ),
-          cardTheme: CardTheme(
+          cardTheme: CardThemeData(
             elevation: 1,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
           ),
-          floatingActionButtonTheme: FloatingActionButtonThemeData(
+          floatingActionButtonTheme: const FloatingActionButtonThemeData(
             elevation: 2,
           ),
         ),
@@ -80,7 +80,7 @@ class VaultNoteApp extends StatelessWidget {
             centerTitle: false,
             elevation: 0,
           ),
-          cardTheme: CardTheme(
+          cardTheme: CardThemeData(
             elevation: 1,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),

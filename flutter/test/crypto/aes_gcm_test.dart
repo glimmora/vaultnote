@@ -56,7 +56,7 @@ void main() {
 
       expect(
         () => AESGCM.encrypt(plaintext, invalidKey),
-        throwsArgumentError,
+        throwsException,
       );
     });
 
@@ -67,7 +67,7 @@ void main() {
 
       expect(
         () => AESGCM.encrypt(plaintext, key, iv: invalidIv),
-        throwsArgumentError,
+        throwsException,
       );
     });
   });

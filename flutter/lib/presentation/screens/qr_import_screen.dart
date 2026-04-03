@@ -18,7 +18,6 @@ class _QRImportScreenState extends State<QRImportScreen> {
   QRViewController? controller;
   bool _isPasswordVisible = false;
   final _passwordController = TextEditingController();
-  bool _showPasswordDialog = false;
   bool _cameraPermissionGranted = false;
   bool _permissionChecked = false;
 
@@ -82,7 +81,7 @@ class _QRImportScreenState extends State<QRImportScreen> {
 
   @override
   void dispose() {
-    controller?.dispose();
+    // Controller self-disposes when QRView is unmounted
     _passwordController.dispose();
     super.dispose();
   }
@@ -245,11 +244,26 @@ class _QRImportScreenState extends State<QRImportScreen> {
     );
   }
 
+  bool _isProcessingQR = false;
+
   void _onQRViewCreated(QRViewController controller) {
     this.controller = controller;
-    controller.scannedDataStream.listen((scanData) {
+    controller.scannedDataStream.listen((scanData) async {
+      if (_isProcessingQR || scanData.code == null || scanData.code!.isEmpty) return;
+      
+      _isProcessingQR = true;
+      
+      // Pause camera while processing
+      await controller.pauseCamera();
+      
       // Process scanned QR
-      context.read<CryptoCubit>().processScannedQR(scanData.code ?? '');
+      context.read<CryptoCubit>().processScannedQR(scanData.code!);
+      
+      // Resume camera after processing
+      if (mounted) {
+        await controller.resumeCamera();
+        _isProcessingQR = false;
+      }
     });
   }
 

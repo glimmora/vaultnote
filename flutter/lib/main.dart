@@ -1,6 +1,4 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/crypto/key_manager.dart';
 import 'core/storage/secure_prefs.dart';
@@ -8,11 +6,6 @@ import 'core/storage/note_repository.dart';
 import 'core/storage/label_repository.dart';
 import 'core/export/vnc_exporter.dart';
 import 'core/export/vnc_importer.dart';
-import 'presentation/cubits/note_cubit.dart';
-import 'presentation/cubits/label_cubit.dart';
-import 'presentation/cubits/crypto_cubit.dart';
-import 'presentation/screens/unlock_screen.dart';
-import 'presentation/screens/home_screen.dart';
 import 'app.dart';
 
 void main() async {
@@ -44,7 +37,7 @@ void main() async {
       ],
       child: const VaultNoteApp(),
     ));
-  } catch (e, stack) {
+  } catch (e) {
     runApp(MaterialApp(
       home: Scaffold(
         body: Center(
